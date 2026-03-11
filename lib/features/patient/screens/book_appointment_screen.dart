@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../services/patient/appointment_service.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
   const BookAppointmentScreen({super.key});
@@ -260,15 +261,36 @@ class _BookAppointmentScreenState
               /// ================= CONFIRM =================
               GestureDetector(
                 onTap: isValid
-                    ? () {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          "Appointment Confirmed"),
-                    ),
-                  );
-                  Navigator.pop(context);
+                    ? () async {
+                  try {
+
+                    await AppointmentService().bookAppointment(
+                      doctorName: doctorController.text.trim(),
+                      department: selectedDepartment!,
+                      date: selectedDate!,
+                      timeSlot: selectedSlot!,
+                    );
+
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(
+                      const SnackBar(
+                        content:
+                        Text("Appointment Confirmed"),
+                      ),
+                    );
+
+                    Navigator.pop(context);
+
+                  } catch (e) {
+
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString()),
+                      ),
+                    );
+
+                  }
                 }
                     : null,
                 child: Container(

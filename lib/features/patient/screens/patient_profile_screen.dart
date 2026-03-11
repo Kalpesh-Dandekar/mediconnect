@@ -1,13 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mediconnect/features/auth/screens/login_screen.dart';
 
-class PatientProfileScreen extends StatelessWidget {
+class PatientProfileScreen extends StatefulWidget {
   const PatientProfileScreen({super.key});
+
+  @override
+  State<PatientProfileScreen> createState() =>
+      _PatientProfileScreenState();
+}
+
+class _PatientProfileScreenState
+    extends State<PatientProfileScreen> {
 
   static const Color _accent = Color(0xFFFFB703);
 
+  String name = "Loading...";
+  String age = "--";
+  String gender = "--";
+  String bloodGroup = "--";
+  String phone = "--";
+
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    try {
+
+      final doc = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists) {
+
+        final data = doc.data()!;
+
+        setState(() {
+
+          name = data["name"] ?? "Patient";
+          age = data["age"]?.toString() ?? "--";
+          gender = data["gender"] ?? "--";
+          bloodGroup = data["bloodGroup"] ?? "--";
+          phone = data["phone"] ?? "--";
+
+          loading = false;
+        });
+      }
+
+    } catch (_) {
+      loading = false;
+    }
+  }
+
   void _logout(BuildContext context) async {
+
     await FirebaseAuth.instance.signOut();
 
     Navigator.pushAndRemoveUntil(
@@ -19,18 +77,22 @@ class PatientProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
+
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+
             children: [
 
-              /// ================= HEADER =================
+              /// HEADER
               const Text(
                 "Profile",
                 style: TextStyle(
@@ -42,12 +104,15 @@ class PatientProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
+              /// USER CARD
               Container(
                 padding: const EdgeInsets.all(18),
+
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(18),
                 ),
+
                 child: Row(
                   children: [
 
@@ -55,8 +120,11 @@ class PatientProfileScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 30,
                       backgroundColor: _accent.withOpacity(0.2),
+
                       child: Text(
-                        (user?.email ?? "U")[0].toUpperCase(),
+                        (name.isNotEmpty ? name[0] : "P")
+                            .toUpperCase(),
+
                         style: const TextStyle(
                           color: _accent,
                           fontWeight: FontWeight.bold,
@@ -67,22 +135,30 @@ class PatientProfileScreen extends StatelessWidget {
 
                     const SizedBox(width: 15),
 
-                    /// Basic Info
+                    /// Email + ID
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+
                         children: [
+
                           Text(
-                            user?.email ?? "patient@mediconnect.com",
+                            user?.email ??
+                                "patient@mediconnect.com",
+
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+
                           const SizedBox(height: 4),
-                          const Text(
-                            "Patient ID: PT-2045",
-                            style: TextStyle(
+
+                          Text(
+                            "Patient ID: ${user?.uid.substring(0,6) ?? "--"}",
+
+                            style: const TextStyle(
                               color: Colors.white60,
                               fontSize: 12,
                             ),
@@ -91,14 +167,15 @@ class PatientProfileScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const Icon(Icons.edit, color: Colors.white38)
+                    const Icon(Icons.edit,
+                        color: Colors.white38),
                   ],
                 ),
               ),
 
               const SizedBox(height: 28),
 
-              /// ================= PERSONAL INFO =================
+              /// PERSONAL INFO
               const Text(
                 "PERSONAL INFORMATION",
                 style: TextStyle(
@@ -110,15 +187,15 @@ class PatientProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              _infoTile("Full Name", "ABC Patient"),
-              _infoTile("Age", "29 Years"),
-              _infoTile("Gender", "Male"),
-              _infoTile("Blood Group", "O+"),
-              _infoTile("Phone", "+91 9876543210"),
+              _infoTile("Full Name", name),
+              _infoTile("Age", age),
+              _infoTile("Gender", gender),
+              _infoTile("Blood Group", bloodGroup),
+              _infoTile("Phone", phone),
 
               const SizedBox(height: 28),
 
-              /// ================= MEDICAL SUMMARY =================
+              /// MEDICAL SUMMARY
               const Text(
                 "MEDICAL SUMMARY",
                 style: TextStyle(
@@ -136,7 +213,7 @@ class PatientProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 28),
 
-              /// ================= LINKED RELATIVE =================
+              /// RELATIVE
               const Text(
                 "LINKED RELATIVE",
                 style: TextStyle(
@@ -150,12 +227,14 @@ class PatientProfileScreen extends StatelessWidget {
 
               Container(
                 padding: const EdgeInsets.all(16),
+
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(
-                  children: const [
+
+                child: const Row(
+                  children: [
                     Icon(Icons.family_restroom,
                         color: Color(0xFFFFB703)),
                     SizedBox(width: 10),
@@ -171,13 +250,15 @@ class PatientProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 40),
 
-              /// ================= LOGOUT =================
+              /// LOGOUT
               Center(
                 child: GestureDetector(
                   onTap: () => _logout(context),
+
                   child: Container(
                     width: 220,
                     height: 50,
+
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
                       color: Colors.redAccent.withOpacity(0.15),
@@ -185,7 +266,9 @@ class PatientProfileScreen extends StatelessWidget {
                         color: Colors.redAccent,
                       ),
                     ),
+
                     alignment: Alignment.center,
+
                     child: const Text(
                       "Logout",
                       style: TextStyle(
@@ -203,29 +286,40 @@ class PatientProfileScreen extends StatelessWidget {
     );
   }
 
-  /// Reusable Info Tile
+  /// Info Tile
   Widget _infoTile(String title, String value) {
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+
+      padding:
+      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(14),
       ),
+
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment:
+        MainAxisAlignment.spaceBetween,
+
         children: [
+
           Text(
             title,
+
             style: const TextStyle(
               color: Colors.white60,
               fontSize: 12,
             ),
           ),
+
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.right,
+
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w500,

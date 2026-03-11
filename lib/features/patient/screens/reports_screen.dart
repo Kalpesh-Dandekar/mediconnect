@@ -1,114 +1,138 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../services/patient/report_service.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+
+    final ReportService reportService = ReportService();
+
     return Container(
       color: const Color(0xFF0C1B2A),
       child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: StreamBuilder<QuerySnapshot>(
+          stream: reportService.getPatientReports(),
+          builder: (context, snapshot) {
 
-              /// ===== HEADER =====
-              const Text(
-                "Reports",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "Clinical records & lab results overview",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
+            if (!snapshot.hasData) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
 
-              const SizedBox(height: 24),
+            final docs = snapshot.data!.docs;
 
-              /// ================= SUMMARY SECTION =================
-              Row(
-                children: const [
-                  Expanded(
-                    child: _SummaryCard(
-                      label: "Total",
-                      value: "8",
+            final pending =
+            docs.where((d) => d["status"] == "pending").toList();
+
+            final available =
+            docs.where((d) => d["status"] == "available").toList();
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
+                  /// HEADER
+                  const Text(
+                    "Reports",
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _SummaryCard(
-                      label: "Pending",
-                      value: "2",
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    "Clinical records & lab results overview",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.6),
                     ),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _SummaryCard(
-                      label: "Available",
-                      value: "6",
-                    ),
+
+                  const SizedBox(height: 24),
+
+                  /// SUMMARY
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryCard(
+                          label: "Total",
+                          value: docs.length.toString(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          label: "Pending",
+                          value: pending.length.toString(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          label: "Available",
+                          value: available.length.toString(),
+                        ),
+                      ),
+                    ],
                   ),
+
+                  const SizedBox(height: 30),
+
+                  /// PENDING REPORTS
+                  const _SectionTitle("PENDING REPORTS"),
+                  const SizedBox(height: 16),
+
+                  ...pending.map((doc) {
+
+                    final data = doc.data() as Map<String, dynamic>;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _PendingReportCard(
+                        testName: data["testName"] ?? "",
+                        givenOn: data["givenOn"] ?? "",
+                        expectedOn: data["expectedOn"] ?? "",
+                        labName: data["labName"] ?? "",
+                        status: data["status"] ?? "",
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 30),
+
+                  /// AVAILABLE REPORTS
+                  const _SectionTitle("AVAILABLE REPORTS"),
+                  const SizedBox(height: 16),
+
+                  ...available.map((doc) {
+
+                    final data = doc.data() as Map<String, dynamic>;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _AvailableReportCard(
+                        testName: data["testName"] ?? "",
+                        uploadedOn: data["uploadedOn"] ?? "",
+                        doctor: data["doctorName"] ?? "",
+                        resultStatus: data["resultStatus"] ?? "",
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 40),
                 ],
               ),
-
-              const SizedBox(height: 30),
-
-              /// ================= PENDING REPORTS =================
-              const _SectionTitle("PENDING REPORTS"),
-              const SizedBox(height: 16),
-
-              const _PendingReportCard(
-                testName: "Complete Blood Count (CBC)",
-                givenOn: "20 Mar 2025",
-                expectedOn: "23 Mar 2025",
-                labName: "City Diagnostics Lab",
-                status: "Processing",
-              ),
-
-              const SizedBox(height: 14),
-
-              const _PendingReportCard(
-                testName: "Vitamin D Level",
-                givenOn: "18 Mar 2025",
-                expectedOn: "22 Mar 2025",
-                labName: "HealthPlus Lab",
-                status: "Ready Soon",
-              ),
-
-              const SizedBox(height: 30),
-
-              /// ================= AVAILABLE REPORTS =================
-              const _SectionTitle("AVAILABLE REPORTS"),
-              const SizedBox(height: 16),
-
-              const _AvailableReportCard(
-                testName: "Liver Function Test",
-                uploadedOn: "15 Mar 2025",
-                doctor: "Dr. Michael Smith",
-                resultStatus: "Normal",
-              ),
-
-              const SizedBox(height: 14),
-
-              const _AvailableReportCard(
-                testName: "Thyroid Profile",
-                uploadedOn: "02 Mar 2025",
-                doctor: "Dr. Anita Sharma",
-                resultStatus: "Attention Required",
-              ),
-
-              const SizedBox(height: 40),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -117,6 +141,7 @@ class ReportsScreen extends StatelessWidget {
 
 class _SectionTitle extends StatelessWidget {
   final String title;
+
   const _SectionTitle(this.title);
 
   @override
@@ -132,7 +157,6 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-/// ================= SUMMARY CARD =================
 class _SummaryCard extends StatelessWidget {
   final String label;
   final String value;
@@ -146,7 +170,9 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          vertical: 18, horizontal: 12),
+        vertical: 18,
+        horizontal: 12,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF14283C),
         borderRadius: BorderRadius.circular(16),
@@ -175,8 +201,9 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-/// ================= PENDING REPORT CARD =================
+/// Pending report card
 class _PendingReportCard extends StatelessWidget {
+
   final String testName;
   final String givenOn;
   final String expectedOn;
@@ -193,6 +220,7 @@ class _PendingReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     Color chipColor =
     status == "Processing"
         ? Colors.orangeAccent
@@ -212,6 +240,7 @@ class _PendingReportCard extends StatelessWidget {
             mainAxisAlignment:
             MainAxisAlignment.spaceBetween,
             children: [
+
               Expanded(
                 child: Text(
                   testName,
@@ -221,10 +250,12 @@ class _PendingReportCard extends StatelessWidget {
                   ),
                 ),
               ),
+
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4),
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: chipColor.withOpacity(0.15),
                   borderRadius:
@@ -238,7 +269,7 @@ class _PendingReportCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              )
+              ),
             ],
           ),
 
@@ -251,7 +282,9 @@ class _PendingReportCard extends StatelessWidget {
               fontSize: 12,
             ),
           ),
+
           const SizedBox(height: 4),
+
           Text(
             "Expected: $expectedOn",
             style: const TextStyle(
@@ -259,7 +292,9 @@ class _PendingReportCard extends StatelessWidget {
               fontSize: 12,
             ),
           ),
+
           const SizedBox(height: 4),
+
           Text(
             "Lab: $labName",
             style: const TextStyle(
@@ -273,8 +308,9 @@ class _PendingReportCard extends StatelessWidget {
   }
 }
 
-/// ================= AVAILABLE REPORT CARD =================
+/// Available report card
 class _AvailableReportCard extends StatelessWidget {
+
   final String testName;
   final String uploadedOn;
   final String doctor;
@@ -289,6 +325,7 @@ class _AvailableReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     Color indicatorColor =
     resultStatus == "Normal"
         ? Colors.greenAccent
@@ -309,6 +346,7 @@ class _AvailableReportCard extends StatelessWidget {
             mainAxisAlignment:
             MainAxisAlignment.spaceBetween,
             children: [
+
               Expanded(
                 child: Text(
                   testName,
@@ -318,6 +356,7 @@ class _AvailableReportCard extends StatelessWidget {
                   ),
                 ),
               ),
+
               Container(
                 height: 8,
                 width: 8,
@@ -325,7 +364,7 @@ class _AvailableReportCard extends StatelessWidget {
                   color: indicatorColor,
                   shape: BoxShape.circle,
                 ),
-              )
+              ),
             ],
           ),
 
@@ -338,7 +377,9 @@ class _AvailableReportCard extends StatelessWidget {
               fontSize: 12,
             ),
           ),
+
           const SizedBox(height: 4),
+
           Text(
             "Doctor: $doctor",
             style: const TextStyle(
@@ -346,7 +387,9 @@ class _AvailableReportCard extends StatelessWidget {
               fontSize: 12,
             ),
           ),
+
           const SizedBox(height: 6),
+
           Text(
             "Result: $resultStatus",
             style: TextStyle(
@@ -360,7 +403,8 @@ class _AvailableReportCard extends StatelessWidget {
 
           Container(
             padding: const EdgeInsets.symmetric(
-                vertical: 8),
+              vertical: 8,
+            ),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius:

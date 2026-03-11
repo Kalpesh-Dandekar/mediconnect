@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../services/patient/emergency_service.dart';
 
 class EmergencyScreen extends StatelessWidget {
   const EmergencyScreen({super.key});
@@ -11,6 +12,9 @@ class EmergencyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final EmergencyService emergencyService = EmergencyService();
+
     return Container(
       color: const Color(0xFF0C1B2A),
       child: SafeArea(
@@ -20,7 +24,7 @@ class EmergencyScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// ===== HEADER =====
+              /// HEADER
               const Text(
                 "Emergency Assistance",
                 style: TextStyle(
@@ -40,7 +44,7 @@ class EmergencyScreen extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              /// ================= PRIMARY AMBULANCE =================
+              /// CRITICAL EMERGENCY
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
@@ -83,8 +87,13 @@ class EmergencyScreen extends StatelessWidget {
                     const SizedBox(height: 18),
 
                     GestureDetector(
-                      onTap: () => _simulateAction(
-                          context, "Calling Ambulance (108)..."),
+                      onTap: () async {
+
+                        await emergencyService.createEmergency("ambulance");
+
+                        _simulateAction(
+                            context, "Ambulance request sent.");
+                      },
                       child: Container(
                         width: double.infinity,
                         padding:
@@ -110,7 +119,7 @@ class EmergencyScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              /// ================= CONNECT DOCTOR =================
+              /// CONNECT DOCTOR
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -149,8 +158,13 @@ class EmergencyScreen extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     GestureDetector(
-                      onTap: () => _simulateAction(
-                          context, "Connecting to doctor..."),
+                      onTap: () async {
+
+                        await emergencyService.createEmergency("doctor");
+
+                        _simulateAction(
+                            context, "Doctor request sent.");
+                      },
                       child: Container(
                         width: double.infinity,
                         padding:
@@ -176,7 +190,7 @@ class EmergencyScreen extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              /// ================= CONTACTS =================
+              /// CONTACTS
               const Text(
                 "Emergency Contacts",
                 style: TextStyle(
@@ -188,7 +202,7 @@ class EmergencyScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              _ContactTile(
+              const _ContactTile(
                 icon: Icons.local_hospital,
                 title: "City Care Hospital",
                 subtitle: "2.3 km away",
@@ -196,7 +210,7 @@ class EmergencyScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              _ContactTile(
+              const _ContactTile(
                 icon: Icons.person,
                 title: "Primary Doctor",
                 subtitle: "Dr. Michael Smith",
@@ -204,7 +218,7 @@ class EmergencyScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              _ContactTile(
+              const _ContactTile(
                 icon: Icons.family_restroom,
                 title: "Emergency Contact",
                 subtitle: "John Doe (Relative)",
@@ -212,10 +226,15 @@ class EmergencyScreen extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              /// ================= ALERT CAREGIVER =================
+              /// ALERT CAREGIVER
               GestureDetector(
-                onTap: () => _simulateAction(
-                    context, "Caregiver has been alerted."),
+                onTap: () async {
+
+                  await emergencyService.createEmergency("caregiver");
+
+                  _simulateAction(
+                      context, "Caregiver alert sent.");
+                },
                 child: Container(
                   width: double.infinity,
                   padding:

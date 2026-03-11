@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../services/patient/appointment_service.dart';
 import 'book_appointment_screen.dart';
 
 class AppointmentsScreen extends StatelessWidget {
@@ -6,6 +8,9 @@ class AppointmentsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final appointmentService = AppointmentService();
+
     return Container(
       color: const Color(0xFF0C1B2A),
       child: SafeArea(
@@ -36,15 +41,14 @@ class AppointmentsScreen extends StatelessWidget {
               const SizedBox(height: 28),
 
               /// ========================
-              /// 1️⃣ BOOK APPOINTMENT
+              /// BOOK APPOINTMENT
               /// ========================
               GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                      const BookAppointmentScreen(),
+                      builder: (_) => const BookAppointmentScreen(),
                     ),
                   );
                 },
@@ -86,7 +90,7 @@ class AppointmentsScreen extends StatelessWidget {
               const SizedBox(height: 32),
 
               /// ========================
-              /// 2️⃣ UPCOMING APPOINTMENT
+              /// UPCOMING APPOINTMENTS
               /// ========================
               const Text(
                 "UPCOMING",
@@ -96,205 +100,112 @@ class AppointmentsScreen extends StatelessWidget {
                   color: Colors.white54,
                 ),
               ),
+
               const SizedBox(height: 14),
 
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF13273B),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: Colors.tealAccent.withOpacity(0.2)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              StreamBuilder<QuerySnapshot>(
+                stream: appointmentService.getPatientAppointments(),
+                builder: (context, snapshot) {
 
-                    Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          "Dr. Michael Smith",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                  /// Loading state
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  /// No data
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Text(
+                      "No appointments yet",
+                      style: TextStyle(color: Colors.white60),
+                    );
+                  }
+
+                  final appointments = snapshot.data!.docs;
+
+                  return Column(
+                    children: appointments.map((doc) {
+
+                      final data = doc.data() as Map<String, dynamic>;
+
+                      final doctor = data["doctorName"] ?? "";
+                      final department = data["department"] ?? "";
+                      final time = data["timeSlot"] ?? "";
+                      final status = (data["status"] ?? "pending").toString();
+
+                      /// Convert Firestore Timestamp → Date
+                      final Timestamp timestamp = data["date"];
+                      final DateTime dateTime = timestamp.toDate();
+                      final date =
+                          "${dateTime.day}/${dateTime.month}/${dateTime.year}";
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF13273B),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.tealAccent.withOpacity(0.2),
                           ),
                         ),
-                        _StatusChip(status: "Confirmed"),
-                      ],
-                    ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
 
-                    const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  doctor,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                _StatusChip(status: status),
+                              ],
+                            ),
 
-                    const Text(
-                      "Gastroenterologist • 12 yrs exp.",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
+                            const SizedBox(height: 6),
 
-                    const SizedBox(height: 12),
+                            Text(
+                              "$department Specialist",
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
 
-                    Row(
-                      children: const [
-                        Icon(Icons.calendar_month,
-                            color: Colors.tealAccent, size: 16),
-                        SizedBox(width: 8),
-                        Text(
-                          "12 April 2025 • 10:30 AM",
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
+                            const SizedBox(height: 12),
+
+                            Row(
+                              children: [
+                                const Icon(Icons.calendar_month,
+                                    color: Colors.tealAccent, size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "$date • $time",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Row(
-                      children: const [
-                        Icon(Icons.location_on_outlined,
-                            color: Colors.white38, size: 16),
-                        SizedBox(width: 8),
-                        Text(
-                          "City Care Hospital",
-                          style: TextStyle(
-                            color: Colors.white60,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    const Text(
-                      "In 2 days",
-                      style: TextStyle(
-                        color: Colors.tealAccent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              /// ========================
-              /// 3️⃣ PAST APPOINTMENTS
-              /// ========================
-              const Text(
-                "PAST CONSULTATIONS",
-                style: TextStyle(
-                  fontSize: 12,
-                  letterSpacing: 1.5,
-                  color: Colors.white54,
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              _PastAppointmentCard(
-                doctor: "Dr. Michael Smith",
-                date: "24 March 2025",
-                diagnosis: "Acute Gastritis",
-                prescription: "Pantoprazole 40mg",
-              ),
-
-              const SizedBox(height: 12),
-
-              _PastAppointmentCard(
-                doctor: "Dr. Anita Sharma",
-                date: "10 February 2025",
-                diagnosis: "Vitamin D Deficiency",
-                prescription: "Vitamin D3 60K",
+                      );
+                    }).toList(),
+                  );
+                },
               ),
 
               const SizedBox(height: 40),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// ========================
-/// PAST APPOINTMENT CARD
-/// ========================
-class _PastAppointmentCard extends StatelessWidget {
-  final String doctor;
-  final String date;
-  final String diagnosis;
-  final String prescription;
-
-  const _PastAppointmentCard({
-    required this.doctor,
-    required this.date,
-    required this.diagnosis,
-    required this.prescription,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-        children: [
-
-          Row(
-            mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                doctor,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const _StatusChip(status: "Completed"),
-            ],
-          ),
-
-          const SizedBox(height: 6),
-
-          Text(
-            date,
-            style: const TextStyle(
-              color: Colors.white60,
-              fontSize: 12,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            "Diagnosis: $diagnosis",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          Text(
-            "Prescription: $prescription",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -310,16 +221,17 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     Color color;
 
-    switch (status) {
-      case "Confirmed":
+    switch (status.toLowerCase()) {
+      case "confirmed":
         color = Colors.greenAccent;
         break;
-      case "Completed":
+      case "completed":
         color = Colors.blueAccent;
         break;
-      case "Pending":
+      case "pending":
         color = Colors.orangeAccent;
         break;
       default:
@@ -331,8 +243,7 @@ class _StatusChip extends StatelessWidget {
           horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
-        borderRadius:
-        BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         status,

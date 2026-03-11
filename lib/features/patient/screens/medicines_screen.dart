@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../services/patient/medicine_service.dart';
+import '../../../services/patient/reminder_service.dart';
+import '../../../services/patient/treatment_service.dart';
 
 class MedicinesScreen extends StatefulWidget {
   const MedicinesScreen({super.key});
@@ -9,26 +13,76 @@ class MedicinesScreen extends StatefulWidget {
 
 class _MedicinesScreenState extends State<MedicinesScreen> {
 
-  /// Dummy grouped data
-  final Map<String, List<Dose>> _groupedDoses = {
-    "Morning": [
-      Dose(name: "Pantoprazole 40mg", time: "08:00 AM"),
-    ],
-    "Afternoon": [
-      Dose(name: "Vitamin D3", time: "02:00 PM"),
-    ],
-    "Evening": [
-      Dose(name: "Pantoprazole 40mg", time: "08:00 PM"),
-    ],
-  };
+  final MedicineService _medicineService = MedicineService();
+  final TreatmentService _treatmentService = TreatmentService();
+
+  Map<String, List<Dose>> _groupedDoses = {};
 
   bool escalationEnabled = true;
+
+  final Set<String> _scheduledReminders = {};
+
+  void scheduleReminder(String medicine, String time, String docId) {
+
+    if (_scheduledReminders.contains(docId)) return;
+
+    _scheduledReminders.add(docId);
+
+    ReminderService.scheduleReminder(
+      medicineName: medicine,
+      time: time,
+      id: docId.hashCode,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _medicineService.getTodayMedicines().listen((snapshot) {
+
+      Map<String, List<Dose>> grouped = {};
+
+      for (var doc in snapshot.docs) {
+
+        final data = doc.data() as Map<String, dynamic>;
+
+        final period = data["period"] ?? "Morning";
+        final name = data["name"] ?? "";
+        final time = data["time"] ?? "";
+        final status = data["status"] ?? "pending";
+
+        scheduleReminder(name, time, doc.id);
+
+        DoseStatus doseStatus = DoseStatus.pending;
+
+        if (status == "taken") doseStatus = DoseStatus.taken;
+        if (status == "missed") doseStatus = DoseStatus.missed;
+
+        final dose = Dose(
+          id: doc.id,
+          name: name,
+          time: time,
+          status: doseStatus,
+        );
+
+        grouped.putIfAbsent(period, () => []);
+        grouped[period]!.add(dose);
+      }
+
+      setState(() {
+        _groupedDoses = grouped;
+      });
+
+    });
+  }
 
   int get _totalDoses =>
       _groupedDoses.values.expand((e) => e).length;
 
   int get _takenDoses =>
-      _groupedDoses.values.expand((e) => e).where((d) => d.status == DoseStatus.taken).length;
+      _groupedDoses.values.expand((e) => e)
+          .where((d) => d.status == DoseStatus.taken).length;
 
   double get _adherence =>
       _totalDoses == 0 ? 0 : _takenDoses / _totalDoses;
@@ -37,7 +91,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
     for (var group in _groupedDoses.values) {
       for (var dose in group) {
         if (dose.status == DoseStatus.pending) {
-          return "${dose.time}";
+          return dose.time;
         }
       }
     }
@@ -46,6 +100,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     return Container(
       color: const Color(0xFF0C1B2A),
       child: SafeArea(
@@ -55,7 +110,6 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// ===== HEADER =====
               const Text(
                 "Medication",
                 style: TextStyle(
@@ -64,7 +118,9 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                   color: Colors.white,
                 ),
               ),
+
               const SizedBox(height: 4),
+
               Text(
                 "Daily treatment & compliance overview",
                 style: TextStyle(
@@ -75,7 +131,6 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
 
               const SizedBox(height: 26),
 
-              /// ===== TODAY SECTION =====
               const Text(
                 "TODAY",
                 style: TextStyle(
@@ -84,13 +139,13 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                   color: Colors.white54,
                 ),
               ),
+
               const SizedBox(height: 14),
 
               ..._buildGroupedDoses(),
 
               const SizedBox(height: 28),
 
-              /// ===== ADHERENCE CARD =====
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -107,6 +162,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+
                         const Text(
                           "Adherence Today",
                           style: TextStyle(
@@ -114,6 +170,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+
                         Text(
                           "${(_adherence * 100).toInt()}%",
                           style: const TextStyle(
@@ -161,7 +218,6 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
 
               const SizedBox(height: 28),
 
-              /// ===== ACTIVE TREATMENT =====
               const Text(
                 "ACTIVE TREATMENT",
                 style: TextStyle(
@@ -170,73 +226,99 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                   color: Colors.white54,
                 ),
               ),
+
               const SizedBox(height: 14),
 
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF13273B),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: _treatmentService.getActiveTreatments(),
+                builder: (context, snapshot) {
 
-                    const Text(
-                      "Pantoprazole 40mg",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const SizedBox();
+                  }
+
+                  final doc = snapshot.data!.docs.first;
+                  final data = doc.data();
+
+                  final medicine = data["medicine"] ?? "";
+                  final totalDays = data["totalDays"] ?? 0;
+                  final completedDays = data["completedDays"] ?? 0;
+                  bool escalation = data["escalation"] ?? false;
+
+                  double progress =
+                  totalDays == 0 ? 0 : completedDays / totalDays;
+
+                  return Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF13273B),
+                      borderRadius: BorderRadius.circular(18),
                     ),
-
-                    const SizedBox(height: 6),
-
-                    const Text(
-                      "14 Day Course • 8 Days Completed",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: 8 / 14,
-                        minHeight: 6,
-                        backgroundColor: Colors.white10,
-                        color: Colors.tealAccent,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Escalation Alert",
-                          style: TextStyle(
-                            color: Colors.white60,
-                            fontSize: 12,
+
+                        Text(
+                          medicine,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        Switch(
-                          value: escalationEnabled,
-                          activeColor: Colors.tealAccent,
-                          onChanged: (value) {
-                            setState(() {
-                              escalationEnabled = value;
-                            });
-                          },
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          "$totalDays Day Course • $completedDays Days Completed",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 6,
+                            backgroundColor: Colors.white10,
+                            color: Colors.tealAccent,
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+
+                            const Text(
+                              "Escalation Alert",
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: 12,
+                              ),
+                            ),
+
+                            Switch(
+                              value: escalation,
+                              activeColor: Colors.tealAccent,
+                              onChanged: (value) {
+
+                                _treatmentService.updateEscalation(
+                                  treatmentId: doc.id,
+                                  value: value,
+                                );
+                              },
+                            ),
+                          ],
                         )
                       ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
 
               const SizedBox(height: 40),
@@ -248,6 +330,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
   }
 
   List<Widget> _buildGroupedDoses() {
+
     List<Widget> widgets = [];
 
     _groupedDoses.forEach((period, doses) {
@@ -266,12 +349,19 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
       widgets.add(const SizedBox(height: 10));
 
       for (var dose in doses) {
+
         widgets.add(
           GestureDetector(
-            onTap: () {
+            onTap: () async {
+
               setState(() {
                 dose.toggle();
               });
+
+              await _medicineService.updateMedicineStatus(
+                medicineId: dose.id,
+                status: dose.status.name,
+              );
             },
             child: Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -297,6 +387,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+
                         Text(
                           dose.name,
                           style: const TextStyle(
@@ -304,7 +395,9 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+
                         const SizedBox(height: 4),
+
                         Text(
                           dose.time,
                           style: const TextStyle(
@@ -329,21 +422,24 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
   }
 }
 
-/// ===== Dose Model =====
 enum DoseStatus { pending, taken, missed }
 
 class Dose {
+
+  final String id;
   final String name;
   final String time;
   DoseStatus status;
 
   Dose({
+    required this.id,
     required this.name,
     required this.time,
     this.status = DoseStatus.pending,
   });
 
   void toggle() {
+
     if (status == DoseStatus.pending) {
       status = DoseStatus.taken;
     } else if (status == DoseStatus.taken) {
@@ -354,41 +450,53 @@ class Dose {
   }
 
   IconData get icon {
+
     switch (status) {
+
       case DoseStatus.taken:
         return Icons.check_circle;
+
       case DoseStatus.missed:
         return Icons.cancel;
+
       default:
         return Icons.radio_button_unchecked;
     }
   }
 
   Color get iconColor {
+
     switch (status) {
+
       case DoseStatus.taken:
         return Colors.greenAccent;
+
       case DoseStatus.missed:
         return Colors.redAccent;
+
       default:
         return Colors.white38;
     }
   }
 
   Color get borderColor {
+
     switch (status) {
+
       case DoseStatus.taken:
         return Colors.greenAccent.withOpacity(0.4);
+
       case DoseStatus.missed:
         return Colors.redAccent.withOpacity(0.4);
+
       default:
         return Colors.white.withOpacity(0.05);
     }
   }
 }
 
-/// ===== STATUS CHIP =====
 class _StatusChip extends StatelessWidget {
+
   final DoseStatus status;
 
   const _StatusChip({required this.status});
@@ -400,14 +508,17 @@ class _StatusChip extends StatelessWidget {
     Color bg;
 
     switch (status) {
+
       case DoseStatus.taken:
         text = "Taken";
         bg = Colors.greenAccent;
         break;
+
       case DoseStatus.missed:
         text = "Missed";
         bg = Colors.redAccent;
         break;
+
       default:
         text = "Pending";
         bg = Colors.orangeAccent;

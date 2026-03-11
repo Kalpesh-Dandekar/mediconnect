@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'patient_profile_screen.dart';
+import '../../../dev/seed_database.dart';
 
 class PatientDashboardScreen extends StatefulWidget {
   const PatientDashboardScreen({super.key});
@@ -12,47 +13,154 @@ class PatientDashboardScreen extends StatefulWidget {
 }
 
 class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
+
   String _userName = "Patient";
+
+  String lastVisitDate = "--";
+  String lastVisitDoctor = "";
+
+  String nextVisitDate = "--";
+  String nextVisitDept = "";
+
+  int takenDoses = 0;
+  int totalDoses = 0;
+
+  String reportStatus = "None";
+
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    _loadDashboard();
   }
 
-  Future<void> _loadUser() async {
+  Future<void> _loadDashboard() async {
+
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user != null) {
-      try {
-        final doc = await FirebaseFirestore.instance
-            .collection("users")
-            .doc(user.uid)
-            .get();
+    if (user == null) return;
 
-        if (doc.exists) {
-          setState(() {
-            _userName = (doc.data()?["name"] ?? "Patient").toString();
-          });
+    final uid = user.uid;
+
+    try {
+
+      /// USER NAME
+      final userDoc = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(uid)
+          .get();
+
+      if (userDoc.exists) {
+        _userName = userDoc.data()?["name"] ?? "Patient";
+      }
+
+      /// LAST VISIT
+      final lastVisitSnap = await FirebaseFirestore.instance
+          .collection("appointments")
+          .where("patientId", isEqualTo: uid)
+          .orderBy("date", descending: true)
+          .limit(1)
+          .get();
+
+      print("Last visit docs: ${lastVisitSnap.docs.length}");
+
+      if (lastVisitSnap.docs.isNotEmpty) {
+
+        final data = lastVisitSnap.docs.first.data();
+
+        if (data["date"] != null) {
+
+          final Timestamp ts = data["date"];
+          final DateTime dt = ts.toDate();
+
+          lastVisitDate = "${dt.day}/${dt.month}/${dt.year}";
         }
-      } catch (_) {}
+
+        lastVisitDoctor = data["doctorName"] ?? "";
+      }
+
+      /// NEXT VISIT
+      final nextVisitSnap = await FirebaseFirestore.instance
+          .collection("appointments")
+          .where("patientId", isEqualTo: uid)
+          .where("date", isGreaterThan: Timestamp.now())
+          .orderBy("date")
+          .limit(1)
+          .get();
+
+      print("Next visit docs: ${nextVisitSnap.docs.length}");
+
+      if (nextVisitSnap.docs.isNotEmpty) {
+
+        final data = nextVisitSnap.docs.first.data();
+
+        if (data["date"] != null) {
+
+          final Timestamp ts = data["date"];
+          final DateTime dt = ts.toDate();
+
+          nextVisitDate = "${dt.day}/${dt.month}/${dt.year}";
+        }
+
+        nextVisitDept = data["department"] ?? "";
+      }
+
+      /// MEDICINES
+      final meds = await FirebaseFirestore.instance
+          .collection("medicines")
+          .where("patientId", isEqualTo: uid)
+          .get();
+
+      print("Medicines found: ${meds.docs.length}");
+
+      totalDoses = meds.docs.length;
+
+      takenDoses = meds.docs
+          .where((d) =>
+      (d.data()["status"] ?? "")
+          .toString()
+          .toLowerCase() == "taken")
+          .length;
+
+      /// REPORTS
+      final reports = await FirebaseFirestore.instance
+          .collection("reports")
+          .where("patientId", isEqualTo: uid)
+          .get();
+
+      reportStatus =
+      reports.docs.isEmpty ? "None" : "${reports.docs.length} Reports";
+
+    } catch (e) {
+
+      print("Dashboard error: $e");
     }
 
     if (mounted) {
-      setState(() => _loading = false);
+
+      setState(() {
+
+        _loading = false;
+
+      });
     }
   }
 
   String _greeting() {
+
     final hour = DateTime.now().hour;
+
     if (hour < 12) return "Good Morning";
+
     if (hour < 17) return "Good Afternoon";
+
     return "Good Evening";
   }
 
   @override
   Widget build(BuildContext context) {
+
     final initials =
     _userName.isNotEmpty ? _userName[0].toUpperCase() : "P";
 
@@ -65,7 +173,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// ================= HEADER =================
+              /// HEADER
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -94,13 +202,13 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
                     ),
                   ),
 
-                  /// Profile Avatar
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const PatientProfileScreen(),
+                          builder: (_) =>
+                          const PatientProfileScreen(),
                         ),
                       );
                     },
@@ -120,60 +228,76 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
                 ],
               ),
 
+              const SizedBox(height: 12),
+
+              /// TEMPORARY SEED BUTTON
+              ElevatedButton(
+                onPressed: () async {
+
+                  await SeedDatabase.run();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Database Seeded")),
+                  );
+
+                  _loadDashboard();
+                },
+                child: const Text("Run Seed"),
+              ),
+
               const SizedBox(height: 24),
 
-              /// ================= SNAPSHOT GRID =================
+              /// SUMMARY GRID
               GridView.count(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+                physics:
+                const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 14,
                 childAspectRatio: 1.35,
-                children: const [
+                children: [
+
                   _SummaryCard(
                     icon: Icons.local_hospital_outlined,
                     title: "Last Visit",
-                    value: "24 Mar",
-                    subtitle: "Dr. Smith",
+                    value: lastVisitDate,
+                    subtitle: lastVisitDoctor,
                   ),
+
                   _SummaryCard(
                     icon: Icons.medication_outlined,
                     title: "Medication",
-                    value: "2 / 3",
+                    value: "$takenDoses / $totalDoses",
                     subtitle: "Doses today",
                   ),
+
                   _SummaryCard(
                     icon: Icons.event_available_outlined,
                     title: "Next Visit",
-                    value: "12 Apr",
-                    subtitle: "Gastro Dept",
+                    value: nextVisitDate,
+                    subtitle: nextVisitDept,
                   ),
+
                   _SummaryCard(
                     icon: Icons.receipt_long_outlined,
                     title: "Reports",
-                    value: "1 Pending",
-                    subtitle: "Lab processing",
+                    value: reportStatus,
+                    subtitle: "Lab status",
                   ),
                 ],
               ),
 
               const SizedBox(height: 26),
 
-              /// ================= MEDICATION PROGRESS =================
               _sectionTitle("Medication Progress"),
-
               const SizedBox(height: 12),
-
               _medicationCard(),
 
               const SizedBox(height: 28),
 
-              /// ================= LAB REPORT =================
               _sectionTitle("Latest Lab Report"),
-
               const SizedBox(height: 12),
-
               _reportCard(),
 
               const SizedBox(height: 40),
@@ -203,49 +327,9 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
-                "Pantoprazole 40mg",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              _StatusChip(
-                label: "Ongoing",
-                color: Colors.teal,
-              )
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: const LinearProgressIndicator(
-              value: 0.66,
-              minHeight: 6,
-              backgroundColor: Colors.white10,
-              color: Colors.tealAccent,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            "2 of 3 doses completed • Next at 8:00 PM",
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.white.withOpacity(0.6),
-            ),
-          ),
-        ],
+      child: Text(
+        "$takenDoses of $totalDoses doses completed today",
+        style: const TextStyle(color: Colors.white),
       ),
     );
   }
@@ -258,46 +342,16 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Complete Blood Count (CBC)",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              _StatusChip(
-                label: "Processing",
-                color: Colors.orange,
-              )
-            ],
-          ),
-
-          SizedBox(height: 10),
-
-          Text(
-            "Collected: 22 Mar 2025",
-            style: TextStyle(fontSize: 12, color: Colors.white70),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "Expected Result: 28 Mar 2025",
-            style: TextStyle(fontSize: 12, color: Colors.white60),
-          ),
-        ],
+      child: Text(
+        reportStatus,
+        style: const TextStyle(color: Colors.white),
       ),
     );
   }
 }
 
-/// ================= SUMMARY CARD =================
 class _SummaryCard extends StatelessWidget {
+
   final IconData icon;
   final String title;
   final String value;
@@ -312,6 +366,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -338,40 +393,17 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             title,
-            style: const TextStyle(fontSize: 11, color: Colors.white70),
+            style: const TextStyle(
+                fontSize: 11,
+                color: Colors.white70),
           ),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 10, color: Colors.white54),
+            style: const TextStyle(
+                fontSize: 10,
+                color: Colors.white54),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// ================= STATUS CHIP =================
-class _StatusChip extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _StatusChip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }
