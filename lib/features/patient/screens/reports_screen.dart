@@ -17,9 +17,30 @@ class ReportsScreen extends StatelessWidget {
           stream: reportService.getPatientReports(),
           builder: (context, snapshot) {
 
-            if (!snapshot.hasData) {
+            /// ✅ FIXED LOADING LOGIC
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(),
+              );
+            }
+
+            /// ✅ SHOW ERROR (if any)
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  "Error: ${snapshot.error}",
+                  style: const TextStyle(color: Colors.white),
+                ),
+              );
+            }
+
+            /// ✅ HANDLE EMPTY DATA
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Center(
+                child: Text(
+                  "No reports found",
+                  style: TextStyle(color: Colors.white),
+                ),
               );
             }
 

@@ -5,6 +5,7 @@ import 'doctor_dashboard_screen.dart';
 import 'today_appointments_screen.dart';
 import 'patients_screen.dart';
 import 'doctor_profile_screen.dart';
+import 'doctor_emergency_screen.dart'; // 🔥 NEW IMPORT
 
 class DoctorRootScreen extends StatefulWidget {
   const DoctorRootScreen({super.key});
@@ -21,6 +22,7 @@ class _DoctorRootScreenState extends State<DoctorRootScreen> {
   final List<Widget> _screens = const [
     DoctorDashboardScreen(),
     TodayAppointmentsScreen(),
+    DoctorEmergencyScreen(), // 🔥 NEW SCREEN (CENTER)
     PatientsScreen(),
     DoctorProfileScreen(),
   ];
@@ -28,6 +30,10 @@ class _DoctorRootScreenState extends State<DoctorRootScreen> {
   final List<_NavItem> _items = const [
     _NavItem(Icons.dashboard_outlined, Icons.dashboard, "Home"),
     _NavItem(Icons.calendar_month_outlined, Icons.calendar_month, "Appointments"),
+
+    /// 🔥 EMERGENCY (CENTER)
+    _NavItem(Icons.warning_amber_outlined, Icons.warning_amber, "Emergency"),
+
     _NavItem(Icons.people_outline, Icons.people, "Patients"),
     _NavItem(Icons.person_outline, Icons.person, "Profile"),
   ];
@@ -50,9 +56,9 @@ class _DoctorRootScreenState extends State<DoctorRootScreen> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Container(
-            height: 72, // slightly increased for safety
+            height: 76,
             decoration: BoxDecoration(
               color: const Color(0xFF1E3148),
               borderRadius: BorderRadius.circular(28),
@@ -84,16 +90,20 @@ class _DoctorRootScreenState extends State<DoctorRootScreen> {
   Widget _buildNavItem(_NavItem item, int index) {
     final selected = index == _currentIndex;
 
+    final isEmergency = item.label == "Emergency";
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _currentIndex = index),
       child: Center(
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
             color: selected
-                ? _accentColor.withOpacity(0.15)
+                ? (isEmergency
+                ? Colors.redAccent.withOpacity(0.15)
+                : _accentColor.withOpacity(0.15))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
@@ -101,23 +111,31 @@ class _DoctorRootScreenState extends State<DoctorRootScreen> {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+
+              /// 🔥 ICON
               Icon(
                 selected ? item.activeIcon : item.icon,
-                size: 20, // reduced size to prevent overflow
-                color: selected ? _accentColor : Colors.white54,
+                size: isEmergency ? 24 : 20,
+                color: selected
+                    ? (isEmergency ? Colors.redAccent : _accentColor)
+                    : Colors.white54,
               ),
-              const SizedBox(height: 2), // reduced spacing
+
+              const SizedBox(height: 2),
+
+              /// 🔥 LABEL
               Text(
                 item.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 10, // reduced font
+                  fontSize: isEmergency ? 11 : 10,
                   fontWeight:
                   selected ? FontWeight.w600 : FontWeight.w400,
-                  color:
-                  selected ? _accentColor : Colors.white54,
+                  color: selected
+                      ? (isEmergency ? Colors.redAccent : _accentColor)
+                      : Colors.white54,
                 ),
               ),
             ],

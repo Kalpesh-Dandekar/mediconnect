@@ -1,19 +1,47 @@
 import 'package:flutter/material.dart';
 import '../../../services/patient/emergency_service.dart';
 
-class EmergencyScreen extends StatelessWidget {
+class EmergencyScreen extends StatefulWidget {
   const EmergencyScreen({super.key});
 
-  void _simulateAction(BuildContext context, String message) {
+  @override
+  State<EmergencyScreen> createState() => _EmergencyScreenState();
+}
+
+class _EmergencyScreenState extends State<EmergencyScreen> {
+
+  final EmergencyService emergencyService = EmergencyService();
+
+  bool _loading = false;
+
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
+  Future<void> _handleEmergency(String type, String successMsg) async {
+
+    if (_loading) return; // prevent double tap
+
+    try {
+      setState(() => _loading = true);
+
+      await emergencyService.createEmergency(type);
+
+      _showMessage(successMsg);
+
+    } catch (e) {
+      _showMessage("Something went wrong");
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-
-    final EmergencyService emergencyService = EmergencyService();
 
     return Container(
       color: const Color(0xFF0C1B2A),
@@ -87,13 +115,10 @@ class EmergencyScreen extends StatelessWidget {
                     const SizedBox(height: 18),
 
                     GestureDetector(
-                      onTap: () async {
-
-                        await emergencyService.createEmergency("ambulance");
-
-                        _simulateAction(
-                            context, "Ambulance request sent.");
-                      },
+                      onTap: () => _handleEmergency(
+                        "ambulance",
+                        "Ambulance request sent",
+                      ),
                       child: Container(
                         width: double.infinity,
                         padding:
@@ -104,7 +129,11 @@ class EmergencyScreen extends StatelessWidget {
                           borderRadius:
                           BorderRadius.circular(16),
                         ),
-                        child: const Text(
+                        child: _loading
+                            ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        )
+                            : const Text(
                           "CALL AMBULANCE (108)",
                           style: TextStyle(
                             color: Colors.white,
@@ -158,13 +187,10 @@ class EmergencyScreen extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     GestureDetector(
-                      onTap: () async {
-
-                        await emergencyService.createEmergency("doctor");
-
-                        _simulateAction(
-                            context, "Doctor request sent.");
-                      },
+                      onTap: () => _handleEmergency(
+                        "doctor",
+                        "Doctor request sent",
+                      ),
                       child: Container(
                         width: double.infinity,
                         padding:
@@ -175,7 +201,9 @@ class EmergencyScreen extends StatelessWidget {
                           borderRadius:
                           BorderRadius.circular(14),
                         ),
-                        child: const Text(
+                        child: _loading
+                            ? const CircularProgressIndicator()
+                            : const Text(
                           "CONNECT NOW",
                           style: TextStyle(
                             color: Colors.black,
@@ -228,13 +256,10 @@ class EmergencyScreen extends StatelessWidget {
 
               /// ALERT CAREGIVER
               GestureDetector(
-                onTap: () async {
-
-                  await emergencyService.createEmergency("caregiver");
-
-                  _simulateAction(
-                      context, "Caregiver alert sent.");
-                },
+                onTap: () => _handleEmergency(
+                  "caregiver",
+                  "Caregiver alerted",
+                ),
                 child: Container(
                   width: double.infinity,
                   padding:
@@ -244,7 +269,9 @@ class EmergencyScreen extends StatelessWidget {
                     color: const Color(0xFF14283C),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Text(
+                  child: _loading
+                      ? const CircularProgressIndicator()
+                      : const Text(
                     "Alert Caregiver",
                     style: TextStyle(
                       color: Colors.tealAccent,

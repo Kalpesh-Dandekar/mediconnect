@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'patient_profile_screen.dart';
-import '../../../dev/seed_database.dart';
 
 class PatientDashboardScreen extends StatefulWidget {
   const PatientDashboardScreen({super.key});
@@ -25,7 +24,10 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
   int takenDoses = 0;
   int totalDoses = 0;
 
-  String reportStatus = "None";
+  /// REPORT
+  String latestReportName = "--";
+  String latestReportDate = "--";
+  String latestReportStatus = "--";
 
   bool _loading = true;
 
@@ -38,21 +40,35 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
   Future<void> _loadDashboard() async {
 
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
     final uid = user.uid;
 
     try {
 
-      /// USER NAME
+      String tempUserName = "Patient";
+
+      String tempLastVisitDate = "--";
+      String tempLastVisitDoctor = "";
+
+      String tempNextVisitDate = "--";
+      String tempNextVisitDept = "";
+
+      int tempTakenDoses = 0;
+      int tempTotalDoses = 0;
+
+      String tempReportName = "--";
+      String tempReportDate = "--";
+      String tempReportStatus = "--";
+
+      /// USER
       final userDoc = await FirebaseFirestore.instance
           .collection("users")
           .doc(uid)
           .get();
 
       if (userDoc.exists) {
-        _userName = userDoc.data()?["name"] ?? "Patient";
+        tempUserName = userDoc.data()?["name"] ?? "Patient";
       }
 
       /// LAST VISIT
@@ -63,21 +79,15 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
           .limit(1)
           .get();
 
-      print("Last visit docs: ${lastVisitSnap.docs.length}");
-
       if (lastVisitSnap.docs.isNotEmpty) {
-
         final data = lastVisitSnap.docs.first.data();
 
         if (data["date"] != null) {
-
-          final Timestamp ts = data["date"];
-          final DateTime dt = ts.toDate();
-
-          lastVisitDate = "${dt.day}/${dt.month}/${dt.year}";
+          final dt = (data["date"] as Timestamp).toDate();
+          tempLastVisitDate = "${dt.day}/${dt.month}/${dt.year}";
         }
 
-        lastVisitDoctor = data["doctorName"] ?? "";
+        tempLastVisitDoctor = data["doctorName"] ?? "";
       }
 
       /// NEXT VISIT
@@ -89,21 +99,15 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
           .limit(1)
           .get();
 
-      print("Next visit docs: ${nextVisitSnap.docs.length}");
-
       if (nextVisitSnap.docs.isNotEmpty) {
-
         final data = nextVisitSnap.docs.first.data();
 
         if (data["date"] != null) {
-
-          final Timestamp ts = data["date"];
-          final DateTime dt = ts.toDate();
-
-          nextVisitDate = "${dt.day}/${dt.month}/${dt.year}";
+          final dt = (data["date"] as Timestamp).toDate();
+          tempNextVisitDate = "${dt.day}/${dt.month}/${dt.year}";
         }
 
-        nextVisitDept = data["department"] ?? "";
+        tempNextVisitDept = data["department"] ?? "";
       }
 
       /// MEDICINES
@@ -112,49 +116,68 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
           .where("patientId", isEqualTo: uid)
           .get();
 
-      print("Medicines found: ${meds.docs.length}");
+      tempTotalDoses = meds.docs.length;
 
-      totalDoses = meds.docs.length;
-
-      takenDoses = meds.docs
+      tempTakenDoses = meds.docs
           .where((d) =>
       (d.data()["status"] ?? "")
           .toString()
           .toLowerCase() == "taken")
           .length;
 
-      /// REPORTS
+      /// 🔥 REPORT (LATEST)
       final reports = await FirebaseFirestore.instance
           .collection("reports")
           .where("patientId", isEqualTo: uid)
+          .orderBy("createdAt", descending: true)
+          .limit(1)
           .get();
 
-      reportStatus =
-      reports.docs.isEmpty ? "None" : "${reports.docs.length} Reports";
+      if (reports.docs.isNotEmpty) {
+        final data = reports.docs.first.data();
+
+        tempReportName = data["testName"] ?? "--";
+
+        if (data["status"] == "available") {
+          tempReportDate = data["uploadedOn"] ?? "--";
+          tempReportStatus = data["resultStatus"] ?? "Available";
+        } else {
+          tempReportDate = data["expectedOn"] ?? "--";
+          tempReportStatus = "Pending";
+        }
+      }
+
+      /// FINAL STATE UPDATE
+      if (mounted) {
+        setState(() {
+          _userName = tempUserName;
+
+          lastVisitDate = tempLastVisitDate;
+          lastVisitDoctor = tempLastVisitDoctor;
+
+          nextVisitDate = tempNextVisitDate;
+          nextVisitDept = tempNextVisitDept;
+
+          takenDoses = tempTakenDoses;
+          totalDoses = tempTotalDoses;
+
+          latestReportName = tempReportName;
+          latestReportDate = tempReportDate;
+          latestReportStatus = tempReportStatus;
+
+          _loading = false;
+        });
+      }
 
     } catch (e) {
-
       print("Dashboard error: $e");
-    }
-
-    if (mounted) {
-
-      setState(() {
-
-        _loading = false;
-
-      });
     }
   }
 
   String _greeting() {
-
     final hour = DateTime.now().hour;
-
     if (hour < 12) return "Good Morning";
-
     if (hour < 17) return "Good Afternoon";
-
     return "Good Evening";
   }
 
@@ -228,30 +251,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
                 ],
               ),
 
-              const SizedBox(height: 12),
-
-              /// TEMPORARY SEED BUTTON
-              ElevatedButton(
-                onPressed: () async {
-
-                  await SeedDatabase.run();
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Database Seeded")),
-                  );
-
-                  _loadDashboard();
-                },
-                child: const Text("Run Seed"),
-              ),
-
               const SizedBox(height: 24),
 
               /// SUMMARY GRID
               GridView.count(
                 shrinkWrap: true,
-                physics:
-                const NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 14,
@@ -269,7 +274,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
                     icon: Icons.medication_outlined,
                     title: "Medication",
                     value: "$takenDoses / $totalDoses",
-                    subtitle: "Doses today",
+                    subtitle: "$takenDoses taken",
                   ),
 
                   _SummaryCard(
@@ -282,20 +287,15 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
                   _SummaryCard(
                     icon: Icons.receipt_long_outlined,
                     title: "Reports",
-                    value: reportStatus,
-                    subtitle: "Lab status",
+                    value: latestReportStatus,
+                    subtitle: latestReportName,
                   ),
                 ],
               ),
 
-              const SizedBox(height: 26),
-
-              _sectionTitle("Medication Progress"),
-              const SizedBox(height: 12),
-              _medicationCard(),
-
               const SizedBox(height: 28),
 
+              /// REPORT SUMMARY
               _sectionTitle("Latest Lab Report"),
               const SizedBox(height: 12),
               _reportCard(),
@@ -319,21 +319,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
     );
   }
 
-  Widget _medicationCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF13273B),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Text(
-        "$takenDoses of $totalDoses doses completed today",
-        style: const TextStyle(color: Colors.white),
-      ),
-    );
-  }
-
   Widget _reportCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -342,9 +327,43 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: Text(
-        reportStatus,
-        style: const TextStyle(color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Text(
+            latestReportName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            "Date: $latestReportDate",
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            "Status: $latestReportStatus",
+            style: TextStyle(
+              color: latestReportStatus == "Normal"
+                  ? Colors.greenAccent
+                  : latestReportStatus == "Critical"
+                  ? Colors.redAccent
+                  : Colors.orangeAccent,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -391,17 +410,25 @@ class _SummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            title,
-            style: const TextStyle(
-                fontSize: 11,
-                color: Colors.white70),
+
+          Flexible(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.white70),
+            ),
           ),
-          Text(
-            subtitle,
-            style: const TextStyle(
-                fontSize: 10,
-                color: Colors.white54),
+
+          Flexible(
+            child: Text(
+              subtitle,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.white54),
+            ),
           ),
         ],
       ),

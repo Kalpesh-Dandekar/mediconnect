@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../services/doctor/appointment_service.dart';
 
 class TodayAppointmentsScreen extends StatefulWidget {
   const TodayAppointmentsScreen({super.key});
@@ -10,38 +12,11 @@ class TodayAppointmentsScreen extends StatefulWidget {
 
 class _TodayAppointmentsScreenState
     extends State<TodayAppointmentsScreen> {
+
   String selectedFilter = "Waiting";
 
-  final List<Map<String, dynamic>> appointments = [
-    {
-      "token": "12",
-      "name": "Rahul Sharma",
-      "age": "34",
-      "time": "10:30 AM",
-      "reason": "Gastric Pain",
-      "status": "Waiting"
-    },
-    {
-      "token": "13",
-      "name": "Priya Mehta",
-      "age": "29",
-      "time": "10:45 AM",
-      "reason": "Follow-up Visit",
-      "status": "Completed"
-    },
-  ];
-
-  List<Map<String, dynamic>> get filteredAppointments {
-    return appointments
-        .where((a) => a["status"] == selectedFilter)
-        .toList();
-  }
-
-  int countByStatus(String status) {
-    return appointments
-        .where((a) => a["status"] == status)
-        .length;
-  }
+  final DoctorAppointmentService service =
+  DoctorAppointmentService();
 
   @override
   Widget build(BuildContext context) {
@@ -53,27 +28,23 @@ class _TodayAppointmentsScreenState
 
             /// ===== HEADER =====
             Padding(
-              padding:
-              const EdgeInsets.fromLTRB(20, 20, 20, 10),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     "Today's Appointments",
                     style: TextStyle(
                       fontSize: 22,
-                      fontWeight:
-                      FontWeight.w700,
+                      fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "${filteredAppointments.length} ${selectedFilter == "Waiting" && filteredAppointments.length == 1 ? "Waiting Patient" : "$selectedFilter Patients"}",
+                    "Live appointments",
                     style: TextStyle(
-                      color:
-                      Colors.white.withOpacity(0.6),
+                      color: Colors.white.withOpacity(0.6),
                       fontSize: 13,
                     ),
                   ),
@@ -81,7 +52,6 @@ class _TodayAppointmentsScreenState
               ),
             ),
 
-            /// subtle divider
             Divider(
               color: Colors.white.withOpacity(0.05),
               height: 1,
@@ -91,9 +61,7 @@ class _TodayAppointmentsScreenState
 
             /// ===== FILTER TABS =====
             Padding(
-              padding:
-              const EdgeInsets.symmetric(
-                  horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   _buildFilter("Waiting"),
@@ -107,39 +75,79 @@ class _TodayAppointmentsScreenState
 
             /// ===== LIST =====
             Expanded(
-              child: filteredAppointments.isEmpty
-                  ? _emptyState()
-                  : ListView.builder(
-                padding:
-                const EdgeInsets
-                    .fromLTRB(20, 0, 20, 90),
-                itemCount:
-                filteredAppointments.length,
-                itemBuilder:
-                    (context, index) {
-                  final item =
-                  filteredAppointments[
-                  index];
+              child: StreamBuilder<QuerySnapshot>(
+                stream: service.getTodayAppointments(),
+                builder: (context, snapshot) {
 
-                  return _AppointmentRow(
-                    token: item["token"],
-                    name: item["name"],
-                    age: item["age"],
-                    time: item["time"],
-                    reason: item["reason"],
-                    status: item["status"],
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  final docs = snapshot.data!.docs;
+
+                  final appointments = docs.map((doc) {
+                    final data =
+                    doc.data() as Map<String, dynamic>;
+
+                    return {
+                      "id": doc.id,
+                      "token":
+                      data["token"]?.toString() ?? "",
+                      "name":
+                      data["patientName"] ?? "",
+                      "age":
+                      data["age"]?.toString() ?? "",
+                      "time": data["timeSlot"] ?? "--", // ✅ FIXED
+                      "reason":
+                      data["reason"] ?? "",
+                      "status":
+                      data["status"] ?? "Waiting",
+                    };
+                  }).toList();
+
+                  final filteredAppointments =
+                  appointments
+                      .where((a) =>
+                  a["status"] == selectedFilter)
+                      .toList();
+
+                  if (filteredAppointments.isEmpty) {
+                    return _emptyState();
+                  }
+
+                  return ListView.builder(
+                    padding:
+                    const EdgeInsets.fromLTRB(
+                        20, 0, 20, 90),
+                    itemCount:
+                    filteredAppointments.length,
+                    itemBuilder: (context, index) {
+
+                      final item =
+                      filteredAppointments[index];
+
+                      return _AppointmentRow(
+                        id: item["id"],
+                        token: item["token"],
+                        name: item["name"],
+                        age: item["age"],
+                        time: item["time"],
+                        reason: item["reason"],
+                        status: item["status"],
+                      );
+                    },
                   );
                 },
               ),
             ),
 
-            /// ===== SUMMARY FOOTER =====
+            /// ===== FOOTER =====
             Container(
-              padding:
-              const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color:
-                Colors.white.withOpacity(0.04),
+                color: Colors.white.withOpacity(0.04),
                 borderRadius:
                 const BorderRadius.vertical(
                     top: Radius.circular(18)),
@@ -148,19 +156,9 @@ class _TodayAppointmentsScreenState
                 mainAxisAlignment:
                 MainAxisAlignment.spaceAround,
                 children: [
-                  _summaryItem(
-                      "Waiting",
-                      countByStatus("Waiting"),
-                      Colors.orange),
-                  _summaryItem(
-                      "In Progress",
-                      countByStatus(
-                          "In Consultation"),
-                      Colors.blueAccent),
-                  _summaryItem(
-                      "Completed",
-                      countByStatus("Completed"),
-                      Colors.green),
+                  _summaryItem("Waiting", Colors.orange),
+                  _summaryItem("In Progress", Colors.blueAccent),
+                  _summaryItem("Completed", Colors.green),
                 ],
               ),
             ),
@@ -170,10 +168,9 @@ class _TodayAppointmentsScreenState
     );
   }
 
+  /// FILTER UI
   Widget _buildFilter(String label) {
-    final bool active =
-        selectedFilter == label;
-    final int count = countByStatus(label);
+    final bool active = selectedFilter == label;
 
     return Expanded(
       child: GestureDetector(
@@ -184,49 +181,17 @@ class _TodayAppointmentsScreenState
         },
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment:
-              MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: active
-                        ? Colors.white
-                        : Colors.white54,
-                    fontWeight: active
-                        ? FontWeight.w600
-                        : FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding:
-                  const EdgeInsets
-                      .symmetric(
-                      horizontal: 6,
-                      vertical: 2),
-                  decoration: BoxDecoration(
-                    color: active
-                        ? Colors.white
-                        .withOpacity(0.1)
-                        : Colors.white
-                        .withOpacity(0.05),
-                    borderRadius:
-                    BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    count.toString(),
-                    style:
-                    const TextStyle(
-                      fontSize: 11,
-                      color:
-                      Colors.white70,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: active
+                    ? Colors.white
+                    : Colors.white54,
+                fontWeight: active
+                    ? FontWeight.w600
+                    : FontWeight.w400,
+              ),
             ),
             const SizedBox(height: 6),
             if (active)
@@ -252,23 +217,21 @@ class _TodayAppointmentsScreenState
     );
   }
 
-  Widget _summaryItem(
-      String label, int count, Color color) {
+  Widget _summaryItem(String label, Color color) {
     return Column(
       children: [
-        Text(
-          count.toString(),
-          style: TextStyle(
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
             color: color,
-            fontWeight:
-            FontWeight.bold,
+            shape: BoxShape.circle,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style:
-          const TextStyle(
+          style: const TextStyle(
             color: Colors.white54,
             fontSize: 12,
           ),
@@ -283,6 +246,8 @@ class _TodayAppointmentsScreenState
 /// ===============================
 
 class _AppointmentRow extends StatelessWidget {
+
+  final String id;
   final String token;
   final String name;
   final String age;
@@ -291,6 +256,7 @@ class _AppointmentRow extends StatelessWidget {
   final String status;
 
   const _AppointmentRow({
+    required this.id,
     required this.token,
     required this.name,
     required this.age,
@@ -301,6 +267,10 @@ class _AppointmentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final DoctorAppointmentService service =
+    DoctorAppointmentService();
+
     Color statusColor;
 
     switch (status) {
@@ -315,18 +285,14 @@ class _AppointmentRow extends StatelessWidget {
     }
 
     return Container(
-      margin:
-      const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color:
-        Colors.white.withOpacity(0.05),
-        borderRadius:
-        BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
 
-          /// Vertical status strip
           Container(
             width: 4,
             height: 80,
@@ -351,32 +317,25 @@ class _AppointmentRow extends StatelessWidget {
                 children: [
                   Text(
                     "$name ($age)",
-                    style:
-                    const TextStyle(
-                      color:
-                      Colors.white,
-                      fontWeight:
-                      FontWeight.w600,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     reason,
-                    style:
-                    const TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color:
-                      Colors.white60,
+                      color: Colors.white60,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     time,
-                    style:
-                    const TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color:
-                      Colors.white54,
+                      color: Colors.white54,
                     ),
                   ),
                 ],
@@ -386,31 +345,30 @@ class _AppointmentRow extends StatelessWidget {
 
           Padding(
             padding:
-            const EdgeInsets.only(
-                right: 14),
+            const EdgeInsets.only(right: 14),
             child: ElevatedButton(
-              style:
-              ElevatedButton.styleFrom(
-                backgroundColor:
-                statusColor,
-                shape:
-                RoundedRectangleBorder(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: statusColor,
+                shape: RoundedRectangleBorder(
                   borderRadius:
-                  BorderRadius
-                      .circular(12),
+                  BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {},
+              onPressed: () async {
+
+                if (status == "Waiting") {
+                  await service.startConsultation(id);
+                } else if (status == "In Consultation") {
+                  await service.completeConsultation(id);
+                }
+              },
               child: Text(
-                status ==
-                    "Completed"
-                    ? "View"
-                    : status ==
-                    "In Consultation"
+                status == "Completed"
+                    ? "Done"
+                    : status == "In Consultation"
                     ? "Continue"
                     : "Start",
-                style:
-                const TextStyle(
+                style: const TextStyle(
                     color: Colors.black),
               ),
             ),

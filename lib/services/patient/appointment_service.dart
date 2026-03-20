@@ -24,11 +24,19 @@ class AppointmentService {
 
     final patientId = user.uid;
 
-    /// Find doctor in users collection
+    /// 🔥 Fetch patient name
+    final userDoc = await _firestore
+        .collection("users")
+        .doc(patientId)
+        .get();
+
+    final patientName = userDoc.data()?["name"] ?? "Patient";
+
+    /// 🔥 Find doctor
     final doctorQuery = await _firestore
         .collection("users")
         .where("name", isEqualTo: doctorName)
-        .where("role", isEqualTo: "doctor")
+        .where("role", isEqualTo: "Doctor") // ⚠️ case sensitive
         .limit(1)
         .get();
 
@@ -39,7 +47,7 @@ class AppointmentService {
     final doctorDoc = doctorQuery.docs.first;
     final doctorId = doctorDoc.id;
 
-    /// Prevent double booking
+    /// 🔥 Prevent double booking
     final existingAppointment = await _firestore
         .collection("appointments")
         .where("doctorId", isEqualTo: doctorId)
@@ -51,15 +59,30 @@ class AppointmentService {
       throw Exception("Selected time slot already booked");
     }
 
-    /// Create appointment
+    /// 🔥 Generate token (simple)
+    final token = DateTime.now().millisecondsSinceEpoch % 1000;
+
+    /// 🔥 Create appointment (UPDATED STRUCTURE)
     await _firestore.collection("appointments").add({
+
+      /// CORE
       "patientId": patientId,
+      "patientName": patientName,
+
       "doctorId": doctorId,
       "doctorName": doctorName,
+
+      /// DETAILS
       "department": department,
-      "date": Timestamp.fromDate(date),   // FIXED
+      "reason": department, // simple for now
       "timeSlot": timeSlot,
-      "status": "pending",
+      "date": Timestamp.fromDate(date),
+
+      /// STATUS FLOW
+      "status": "Waiting", // ✅ IMPORTANT FIX
+
+      /// EXTRA
+      "token": token,
       "createdAt": FieldValue.serverTimestamp(),
     });
   }
@@ -93,12 +116,12 @@ class AppointmentService {
         .collection("appointments")
         .doc(appointmentId)
         .update({
-      "status": "cancelled"
+      "status": "Cancelled"
     });
   }
 
   /// ================================
-  /// UPDATE APPOINTMENT STATUS
+  /// UPDATE STATUS (Doctor side use)
   /// ================================
   Future<void> updateAppointmentStatus({
     required String appointmentId,
@@ -112,5 +135,4 @@ class AppointmentService {
       "status": status
     });
   }
-
 }

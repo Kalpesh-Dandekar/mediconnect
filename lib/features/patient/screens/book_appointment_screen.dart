@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/patient/appointment_service.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
@@ -17,6 +18,9 @@ class _BookAppointmentScreenState
   String? selectedDepartment;
   DateTime? selectedDate;
   String? selectedSlot;
+
+  /// 🔥 NEW: selected doctorId
+  String? selectedDoctorId;
 
   final List<String> departments = [
     "Cardiology",
@@ -38,9 +42,41 @@ class _BookAppointmentScreenState
 
   bool get isValid =>
       selectedDepartment != null &&
-          doctorController.text.isNotEmpty &&
+          selectedDoctorId != null && // 🔥 FIXED
           selectedDate != null &&
           selectedSlot != null;
+
+  /// 🔥 FETCH DOCTOR BY NAME
+  Future<void> _selectDoctor(String name) async {
+
+    final query = await FirebaseFirestore.instance
+        .collection("users")
+        .where("name", isEqualTo: name)
+        .where("role", isEqualTo: "Doctor")
+        .limit(1)
+        .get();
+
+    if (query.docs.isEmpty) {
+
+      selectedDoctorId = null;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Doctor not found")),
+      );
+
+    } else {
+
+      final doc = query.docs.first;
+
+      selectedDoctorId = doc.id;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Selected: ${doc["name"]}")),
+      );
+    }
+
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,14 +166,17 @@ class _BookAppointmentScreenState
                     BorderRadius.circular(14),
                     borderSide: BorderSide.none,
                   ),
-                  suffixIcon: const Icon(
-                    Icons.search,
-                    color: Colors.white38,
+                  suffixIcon: IconButton(
+                    icon: const Icon(
+                      Icons.search,
+                      color: Colors.white38,
+                    ),
+                    onPressed: () {
+                      _selectDoctor(
+                          doctorController.text.trim());
+                    },
                   ),
                 ),
-                onChanged: (_) {
-                  setState(() {});
-                },
               ),
 
               const SizedBox(height: 28),
