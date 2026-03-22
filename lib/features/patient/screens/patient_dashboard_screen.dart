@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'patient_profile_screen.dart';
-
+import 'package:mediconnect/services/patient/patient_link_service.dart';
 class PatientDashboardScreen extends StatefulWidget {
   const PatientDashboardScreen({super.key});
 
@@ -12,6 +12,8 @@ class PatientDashboardScreen extends StatefulWidget {
 }
 
 class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
+
+  final PatientLinkService _linkService = PatientLinkService();
 
   String _userName = "Patient";
 
@@ -24,17 +26,39 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
   int takenDoses = 0;
   int totalDoses = 0;
 
-  /// REPORT
   String latestReportName = "--";
   String latestReportDate = "--";
   String latestReportStatus = "--";
 
   bool _loading = true;
 
+  String linkCode = "";
+
   @override
   void initState() {
     super.initState();
     _loadDashboard();
+  }
+
+  /// 🔥 GENERATE CODE
+  Future<void> _generateLinkCode() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final code =
+      await _linkService.generateAndSaveCode(user.uid);
+
+      setState(() {
+        linkCode = code;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Link code generated")),
+      );
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future<void> _loadDashboard() async {
@@ -47,19 +71,16 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
     try {
 
       String tempUserName = "Patient";
-
       String tempLastVisitDate = "--";
       String tempLastVisitDoctor = "";
-
       String tempNextVisitDate = "--";
       String tempNextVisitDept = "";
-
       int tempTakenDoses = 0;
       int tempTotalDoses = 0;
-
       String tempReportName = "--";
       String tempReportDate = "--";
       String tempReportStatus = "--";
+      String tempLinkCode = "";
 
       /// USER
       final userDoc = await FirebaseFirestore.instance
@@ -70,6 +91,11 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
       if (userDoc.exists) {
         tempUserName = userDoc.data()?["name"] ?? "Patient";
       }
+
+      /// 🔥 GET LINK CODE
+      final existingCode =
+      await _linkService.getLinkCode(uid);
+      tempLinkCode = existingCode ?? "";
 
       /// LAST VISIT
       final lastVisitSnap = await FirebaseFirestore.instance
@@ -125,7 +151,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
           .toLowerCase() == "taken")
           .length;
 
-      /// 🔥 REPORT (LATEST)
+      /// REPORT
       final reports = await FirebaseFirestore.instance
           .collection("reports")
           .where("patientId", isEqualTo: uid)
@@ -147,24 +173,19 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
         }
       }
 
-      /// FINAL STATE UPDATE
       if (mounted) {
         setState(() {
           _userName = tempUserName;
-
           lastVisitDate = tempLastVisitDate;
           lastVisitDoctor = tempLastVisitDoctor;
-
           nextVisitDate = tempNextVisitDate;
           nextVisitDept = tempNextVisitDept;
-
           takenDoses = tempTakenDoses;
           totalDoses = tempTotalDoses;
-
           latestReportName = tempReportName;
           latestReportDate = tempReportDate;
           latestReportStatus = tempReportStatus;
-
+          linkCode = tempLinkCode;
           _loading = false;
         });
       }
@@ -253,6 +274,95 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
 
               const SizedBox(height: 24),
 
+              /// 🔥 CLEAN LINK CARD
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1F3B5C), Color(0xFF14283C)],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    Row(
+                      children: const [
+                        Icon(Icons.link, color: Colors.tealAccent),
+                        SizedBox(width: 8),
+                        Text(
+                          "Connect a Relative",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      linkCode.isEmpty
+                          ? "Generate a secure code to connect your relative"
+                          : "Share this code with your relative:",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    if (linkCode.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          linkCode,
+                          style: const TextStyle(
+                            color: Colors.tealAccent,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 14),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _generateLinkCode,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.tealAccent,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          linkCode.isEmpty
+                              ? "Generate Code"
+                              : "Regenerate Code",
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
               /// SUMMARY GRID
               GridView.count(
                 shrinkWrap: true,
@@ -295,7 +405,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
 
               const SizedBox(height: 28),
 
-              /// REPORT SUMMARY
               _sectionTitle("Latest Lab Report"),
               const SizedBox(height: 12),
               _reportCard(),
@@ -325,7 +434,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF14283C),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,7 +499,6 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF14283C),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,15 +516,14 @@ class _SummaryCard extends StatelessWidget {
               color: Colors.white,
             ),
           ),
+
           const SizedBox(height: 2),
 
           Flexible(
             child: Text(
               title,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.white70),
+              style: const TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ),
 
@@ -425,9 +531,7 @@ class _SummaryCard extends StatelessWidget {
             child: Text(
               subtitle,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 10,
-                  color: Colors.white54),
+              style: const TextStyle(fontSize: 10, color: Colors.white54),
             ),
           ),
         ],

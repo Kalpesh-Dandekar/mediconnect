@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../services/doctor/patient_service.dart';
 import 'consultation_screen.dart';
 
 class PatientsScreen extends StatefulWidget {
@@ -12,37 +13,9 @@ class _PatientsScreenState extends State<PatientsScreen> {
   final TextEditingController searchController = TextEditingController();
   String selectedFilter = "All";
 
+  final PatientService patientService = PatientService();
+
   static const Color accent = Color(0xFF00C2B2);
-
-  /// Dummy Data
-  final List<Map<String, dynamic>> patients = [
-    {
-      "id": "P-1021",
-      "name": "Rahul Sharma",
-      "age": 34,
-      "lastVisit": "24 Mar 2025",
-      "diagnosis": "Gastritis",
-      "status": "Active",
-      "visitedToday": false,
-    },
-    {
-      "id": "P-1044",
-      "name": "Priya Mehta",
-      "age": 29,
-      "lastVisit": "18 Mar 2025",
-      "diagnosis": "Vitamin D Deficiency",
-      "status": "Follow-up",
-      "visitedToday": true,
-    },
-  ];
-
-  List<Map<String, dynamic>> get filteredPatients {
-    if (selectedFilter == "All") return patients;
-
-    return patients
-        .where((p) => (p["status"] ?? "").toString() == selectedFilter)
-        .toList();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +25,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
         child: Column(
           children: [
 
-            /// ===== HEADER =====
+            /// HEADER
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
               child: Column(
@@ -67,18 +40,27 @@ class _PatientsScreenState extends State<PatientsScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    "${patients.length} registered patients",
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 13,
-                    ),
+
+                  /// LIVE COUNT
+                  StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: patientService.getPatients(),
+                    builder: (context, snapshot) {
+                      final count = snapshot.data?.length ?? 0;
+
+                      return Text(
+                        "$count registered patients",
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 13,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
             ),
 
-            /// ===== SEARCH =====
+            /// SEARCH
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
@@ -100,6 +82,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
                           hintStyle: TextStyle(color: Colors.white38),
                           border: InputBorder.none,
                         ),
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
                   ],
@@ -109,7 +92,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
 
             const SizedBox(height: 15),
 
-            /// ===== FILTER =====
+            /// FILTER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -123,23 +106,61 @@ class _PatientsScreenState extends State<PatientsScreen> {
 
             const SizedBox(height: 15),
 
-            /// ===== PATIENT LIST =====
+            /// PATIENT LIST
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                itemCount: filteredPatients.length,
-                itemBuilder: (context, index) {
-                  final patient = filteredPatients[index];
+              child: StreamBuilder<List<Map<String, dynamic>>>(
+                stream: patientService.getPatients(),
+                builder: (context, snapshot) {
 
-                  return _PatientCard(
-                    id: (patient["id"] ?? "").toString(),
-                    name: (patient["name"] ?? "Unknown").toString(),
-                    age: (patient["age"] ?? "").toString(),
-                    lastVisit: (patient["lastVisit"] ?? "-").toString(),
-                    diagnosis:
-                    (patient["diagnosis"] ?? "No diagnosis").toString(),
-                    status: (patient["status"] ?? "Active").toString(),
-                    visitedToday: patient["visitedToday"] ?? false,
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  final allPatients = snapshot.data!;
+
+                  /// SEARCH
+                  final searchedPatients = allPatients.where((p) {
+                    final name = (p["name"] ?? "").toLowerCase();
+                    final query = searchController.text.toLowerCase();
+                    return name.contains(query);
+                  }).toList();
+
+                  /// FILTER
+                  final filteredPatients = selectedFilter == "All"
+                      ? searchedPatients
+                      : searchedPatients
+                      .where((p) => p["status"] == selectedFilter)
+                      .toList();
+
+                  if (filteredPatients.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        "No patients found",
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                    itemCount: filteredPatients.length,
+                    itemBuilder: (context, index) {
+
+                      final patient = filteredPatients[index];
+
+                      return _PatientCard(
+                        id: patient["id"] ?? "",
+                        name: patient["name"] ?? "",
+                        age: patient["age"].toString(),
+                        lastVisit: patient["lastVisit"] ?? "",
+                        diagnosis: patient["diagnosis"] ?? "",
+                        status: patient["status"] ?? "",
+                        visitedToday: patient["visitedToday"] ?? false,
+                        appointmentId: patient["appointmentId"] ?? "",
+                      );
+                    },
                   );
                 },
               ),
@@ -178,9 +199,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
   }
 }
 
-/// =====================================================
-/// PATIENT CARD
-/// =====================================================
+/// ================= PATIENT CARD =================
 
 class _PatientCard extends StatelessWidget {
   final String id;
@@ -190,6 +209,7 @@ class _PatientCard extends StatelessWidget {
   final String diagnosis;
   final String status;
   final bool visitedToday;
+  final String appointmentId;
 
   const _PatientCard({
     required this.id,
@@ -199,6 +219,7 @@ class _PatientCard extends StatelessWidget {
     required this.diagnosis,
     required this.status,
     required this.visitedToday,
+    required this.appointmentId,
   });
 
   static const Color accent = Color(0xFF00C2B2);
@@ -216,7 +237,6 @@ class _PatientCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          /// Top Row
           Row(
             children: [
               CircleAvatar(
@@ -235,13 +255,8 @@ class _PatientCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text(name,
+                        style: const TextStyle(color: Colors.white)),
                     Text(
                       "$id • Age: ${age.isEmpty ? "-" : age}",
                       style: const TextStyle(
@@ -265,7 +280,6 @@ class _PatientCard extends StatelessWidget {
                   style: const TextStyle(
                     color: accent,
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -276,42 +290,44 @@ class _PatientCard extends StatelessWidget {
 
           Text(
             "Diagnosis: $diagnosis",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.white70),
           ),
 
           const SizedBox(height: 4),
 
           Text(
             "Last Visit: $lastVisit",
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white54),
           ),
 
           const SizedBox(height: 16),
 
-          /// Action Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: accent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               onPressed: () {
+
+                if (appointmentId.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("No appointment linked")),
+                  );
+                  return;
+                }
+
+                /// 🔥 DEBUG (CHECK IN CONSOLE)
+                print("Opening Consultation with ID: $appointmentId");
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => ConsultationScreen(
                       patientId: id,
                       patientName: name,
+                      appointmentId: appointmentId,
                     ),
                   ),
                 );
@@ -320,10 +336,7 @@ class _PatientCard extends StatelessWidget {
                 visitedToday
                     ? "Continue Consultation"
                     : "Start Consultation",
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(color: Colors.black),
               ),
             ),
           ),

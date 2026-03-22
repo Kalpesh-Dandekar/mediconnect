@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../../services/doctor/consultation_service.dart';
 
 class ConsultationScreen extends StatefulWidget {
   final String patientId;
   final String patientName;
+  final String appointmentId;
 
   const ConsultationScreen({
     super.key,
     required this.patientId,
     required this.patientName,
+    required this.appointmentId,
   });
 
   @override
@@ -15,31 +18,34 @@ class ConsultationScreen extends StatefulWidget {
 }
 
 class _ConsultationScreenState extends State<ConsultationScreen> {
+
   final TextEditingController diagnosisController = TextEditingController();
+  final TextEditingController summaryController = TextEditingController();
   final TextEditingController adviceController = TextEditingController();
 
-  List<Map<String, String>> prescriptions = [];
-  List<String> recommendedTests = [];
-
   final TextEditingController medicineController = TextEditingController();
-  final TextEditingController dosageController = TextEditingController();
   final TextEditingController durationController = TextEditingController();
 
+  int frequency = 1;
+  List<String> selectedTimings = [];
+
+  List<Map<String, dynamic>> prescriptions = [];
+  List<String> recommendedTests = [];
+
   DateTime? followUpDate;
+  bool _loading = false;
 
   static const Color accent = Color(0xFF00C2B2);
+  final List<String> timingOptions = ["Morning", "Afternoon", "Night"];
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0C1B2A),
-        elevation: 0,
-        title: Text(
-          widget.patientName,
-          style: const TextStyle(color: Colors.white),
-        ),
+        title: Text(widget.patientName, style: const TextStyle(color: Colors.white)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
@@ -47,102 +53,100 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            /// ===== DIAGNOSIS =====
             _sectionTitle("Diagnosis"),
             _inputField(diagnosisController, "Enter diagnosis"),
 
+            const SizedBox(height: 20),
+
+            _sectionTitle("Consultation Summary"),
+            _inputField(summaryController, "Short summary"),
+
             const SizedBox(height: 24),
 
-            /// ===== PRESCRIPTION =====
-            _sectionTitle("Prescription"),
+            _sectionTitle("Medicines"),
 
             _inputField(medicineController, "Medicine Name"),
             const SizedBox(height: 10),
-            _inputField(dosageController, "Dosage (e.g., 1-0-1)"),
+            _inputField(durationController, "Duration (days)"),
+
             const SizedBox(height: 10),
-            _inputField(durationController, "Duration (e.g., 5 days)"),
+
+            Row(
+              children: [
+                const Text("Frequency:", style: TextStyle(color: Colors.white)),
+                const SizedBox(width: 10),
+                DropdownButton<int>(
+                  dropdownColor: const Color(0xFF1E3148),
+                  value: frequency,
+                  items: [1,2,3].map((e) => DropdownMenuItem(
+                    value: e,
+                    child: Text("$e/day", style: const TextStyle(color: Colors.white)),
+                  )).toList(),
+                  onChanged: (val) => setState(() => frequency = val!),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            Wrap(
+              spacing: 10,
+              children: timingOptions.map((t) {
+                final selected = selectedTimings.contains(t);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selected
+                          ? selectedTimings.remove(t)
+                          : selectedTimings.add(t);
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? accent.withOpacity(0.2)
+                          : Colors.white.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      t,
+                      style: TextStyle(color: selected ? accent : Colors.white70),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
 
             const SizedBox(height: 12),
 
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accent,
-              ),
-              onPressed: _addPrescription,
-              child: const Text(
-                "Add Medicine",
-                style: TextStyle(color: Colors.black),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: accent),
+              onPressed: _addMedicine,
+              child: const Text("Add Medicine", style: TextStyle(color: Colors.black)),
             ),
 
             const SizedBox(height: 16),
 
-            ...prescriptions.map((med) => _prescriptionCard(med)),
+            /// 🔥 FIXED: medicine list
+            ...prescriptions.map((med) => _medicineCard(med)).toList(),
 
             const SizedBox(height: 24),
 
-            /// ===== TESTS =====
-            _sectionTitle("Recommended Tests"),
-
-            _testChip("Blood Test"),
-            _testChip("X-Ray"),
-            _testChip("MRI"),
-            _testChip("CT Scan"),
-
-            const SizedBox(height: 24),
-
-            /// ===== ADVICE =====
             _sectionTitle("Advice"),
-
-            _inputField(adviceController, "Enter advice for patient"),
-
-            const SizedBox(height: 24),
-
-            /// ===== FOLLOW UP =====
-            _sectionTitle("Follow-up Date"),
-
-            GestureDetector(
-              onTap: _pickDate,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  followUpDate == null
-                      ? "Select follow-up date"
-                      : "${followUpDate!.day}-${followUpDate!.month}-${followUpDate!.year}",
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
+            _inputField(adviceController, "Enter advice"),
 
             const SizedBox(height: 40),
 
-            /// ===== SAVE BUTTON =====
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accent,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Consultation Saved (Dummy)"),
-                    ),
-                  );
-                },
-                child: const Text(
-                  "Complete Consultation",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: accent),
+                onPressed: _loading ? null : _saveConsultation,
+                child: _loading
+                    ? const CircularProgressIndicator(color: Colors.black)
+                    : const Text("Complete Consultation",
+                    style: TextStyle(color: Colors.black)),
               ),
             ),
           ],
@@ -151,22 +155,74 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     );
   }
 
-  /// ==========================
-  /// HELPERS
-  /// ==========================
+  /// 🔥 ADD MEDICINE
+  void _addMedicine() {
+    if (medicineController.text.isEmpty || durationController.text.isEmpty) return;
 
-  Widget _sectionTitle(String title) {
-    return Text(
-      title.toUpperCase(),
-      style: const TextStyle(
-        color: Colors.white54,
-        letterSpacing: 1.2,
-        fontSize: 13,
+    setState(() {
+      prescriptions.add({
+        "medicine": medicineController.text,
+        "duration": durationController.text,
+        "frequency": frequency,
+        "timings": List<String>.from(selectedTimings),
+      });
+    });
+
+    medicineController.clear();
+    durationController.clear();
+    selectedTimings.clear();
+    frequency = 1;
+  }
+
+  /// 🔥 SAVE CONSULTATION (FIXED)
+  Future<void> _saveConsultation() async {
+
+    setState(() => _loading = true);
+
+    try {
+      print("Appointment ID: ${widget.appointmentId}"); // DEBUG
+
+      await ConsultationService().saveConsultation(
+        patientId: widget.patientId,
+        patientName: widget.patientName,
+        diagnosis: diagnosisController.text.trim(),
+        summary: summaryController.text.trim(),
+        prescriptions: prescriptions,
+        tests: [],
+        advice: adviceController.text.trim(),
+        appointmentId: widget.appointmentId, // ✅ FIX
+      );
+
+      Navigator.pop(context);
+
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+
+    setState(() => _loading = false);
+  }
+
+  /// 🔥 MEDICINE CARD (FIXED ERROR)
+  Widget _medicineCard(Map<String, dynamic> med) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        "${med["medicine"]} • ${med["duration"]} days",
+        style: const TextStyle(color: Colors.white),
       ),
     );
   }
 
-  Widget _inputField(TextEditingController controller, String hint) {
+  Widget _sectionTitle(String title) =>
+      Text(title.toUpperCase(), style: const TextStyle(color: Colors.white54));
+
+  Widget _inputField(TextEditingController c, String h) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -175,112 +231,14 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
         borderRadius: BorderRadius.circular(14),
       ),
       child: TextField(
-        controller: controller,
+        controller: c,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: h,
           hintStyle: const TextStyle(color: Colors.white38),
           border: InputBorder.none,
         ),
       ),
     );
-  }
-
-  void _addPrescription() {
-    if (medicineController.text.isEmpty) return;
-
-    setState(() {
-      prescriptions.add({
-        "medicine": medicineController.text,
-        "dosage": dosageController.text,
-        "duration": durationController.text,
-      });
-    });
-
-    medicineController.clear();
-    dosageController.clear();
-    durationController.clear();
-  }
-
-  Widget _prescriptionCard(Map<String, String> med) {
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            med["medicine"] ?? "",
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "Dosage: ${med["dosage"]}",
-            style: const TextStyle(color: Colors.white60),
-          ),
-          Text(
-            "Duration: ${med["duration"]}",
-            style: const TextStyle(color: Colors.white60),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _testChip(String test) {
-    bool selected = recommendedTests.contains(test);
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            if (selected) {
-              recommendedTests.remove(test);
-            } else {
-              recommendedTests.add(test);
-            }
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected
-                ? accent.withOpacity(0.15)
-                : Colors.white.withOpacity(0.06),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            test,
-            style: TextStyle(
-              color: selected ? accent : Colors.white70,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickDate() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 7)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2035),
-    );
-
-    if (picked != null) {
-      setState(() {
-        followUpDate = picked;
-      });
-    }
   }
 }

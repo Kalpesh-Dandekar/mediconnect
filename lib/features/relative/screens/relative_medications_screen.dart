@@ -1,35 +1,152 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mediconnect/services/relative/relative_medicine_service.dart';
+import 'package:mediconnect/services/relative/relative_patient_service.dart';
 
-class RelativeMedicationsScreen extends StatelessWidget {
+enum DoseStatus { pending, taken, missed }
+
+class RelativeMedicationsScreen extends StatefulWidget {
   const RelativeMedicationsScreen({super.key});
 
-  static const Color _accent = Color(0xFF8E44AD);
+  @override
+  State<RelativeMedicationsScreen> createState() =>
+      _RelativeMedicationsScreenState();
+}
+
+class _RelativeMedicationsScreenState
+    extends State<RelativeMedicationsScreen> {
+
+  final RelativeMedicineService _medicineService =
+  RelativeMedicineService();
+
+  final RelativePatientService _patientService =
+  RelativePatientService();
+
+  Map<String, List<Dose>> _groupedDoses = {};
+
+  String patientName = "Loading...";
+  String? patientId;
+
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final patient =
+    await _patientService.getPatient(user.uid);
+
+    if (patient == null) {
+      setState(() => loading = false);
+      return;
+    }
+
+    patientId = patient['id'];
+    patientName = patient['name'] ?? "Patient";
+
+    _listenMedicines();
+  }
+
+  void _listenMedicines() {
+    if (patientId == null) return;
+
+    _medicineService
+        .getTodayMedicines(patientId!)
+        .listen((snapshot) {
+
+      Map<String, List<Dose>> grouped = {};
+
+      for (var doc in snapshot.docs) {
+
+        final data = doc.data() as Map<String, dynamic>;
+
+        final period = (data["period"] ?? "Morning").toString();
+        final name = (data["name"] ?? "").toString();
+        final time = (data["time"] ?? "").toString();
+        final status = (data["status"] ?? "pending").toString();
+
+        DoseStatus doseStatus = DoseStatus.pending;
+
+        if (status == "taken") doseStatus = DoseStatus.taken;
+        if (status == "missed") doseStatus = DoseStatus.missed;
+
+        final dose = Dose(
+          id: doc.id,
+          name: name,
+          time: time,
+          status: doseStatus,
+        );
+
+        grouped.putIfAbsent(period, () => []);
+        grouped[period]!.add(dose);
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _groupedDoses = grouped;
+        loading = false;
+      });
+    });
+  }
+
+  int get _totalDoses =>
+      _groupedDoses.values.expand((e) => e).length;
+
+  int get _takenDoses =>
+      _groupedDoses.values.expand((e) => e)
+          .where((d) => d.status == DoseStatus.taken)
+          .length;
+
+  double get _adherence =>
+      _totalDoses == 0 ? 0 : _takenDoses / _totalDoses;
+
+  String get _nextDose {
+    for (var group in _groupedDoses.values) {
+      for (final dose in group) {
+        if (dose.status == DoseStatus.pending) {
+          return dose.time.isEmpty ? "--" : dose.time;
+        }
+      }
+    }
+    return "All completed";
+  }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: loading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// ================= HEADER =================
+              /// HEADER
               const Text(
-                "Today's Medications",
+                "Medication",
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 26,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
 
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
 
               Text(
-                "Monitoring: Rahul Sharma",
+                "Monitoring: $patientName",
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.white.withOpacity(0.6),
@@ -38,85 +155,63 @@ class RelativeMedicationsScreen extends StatelessWidget {
 
               const SizedBox(height: 26),
 
-              /// ================= PROGRESS SUMMARY =================
+              const Text(
+                "TODAY",
+                style: TextStyle(
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                  color: Colors.white54,
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              ..._buildGroupedDoses(),
+
+              const SizedBox(height: 28),
+
+              /// ADHERENCE
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: const Color(0xFF14283C),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.05),
-                  ),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    const Text(
-                      "Today's Completion",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
+                    Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Adherence Today",
+                            style: TextStyle(color: Colors.white)),
+                        Text(
+                          "${(_adherence * 100).toInt()}%",
+                          style: const TextStyle(
+                              color: Colors.tealAccent),
+                        ),
+                      ],
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: 0.66,
-                        minHeight: 6,
-                        backgroundColor: Colors.white10,
-                        color: _accent,
-                      ),
+                    LinearProgressIndicator(
+                      value: _adherence,
+                      minHeight: 6,
+                      backgroundColor: Colors.white10,
+                      color: Colors.tealAccent,
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
                     Text(
-                      "2 of 3 doses taken",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.6),
-                      ),
+                      "$_takenDoses of $_totalDoses doses completed • Next: $_nextDose",
+                      style: const TextStyle(color: Colors.white60),
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(height: 28),
-
-              /// ================= MED LIST =================
-              _SectionTitle("Completed / Missed"),
-
-              const SizedBox(height: 14),
-
-              const _MedicationTile(
-                name: "Pantoprazole 40mg",
-                time: "08:00 AM",
-                status: "Taken",
-              ),
-
-              const SizedBox(height: 12),
-
-              const _MedicationTile(
-                name: "Vitamin D3",
-                time: "02:00 PM",
-                status: "Missed",
-              ),
-
-              const SizedBox(height: 30),
-
-              /// ================= UPCOMING =================
-              _SectionTitle("Upcoming"),
-
-              const SizedBox(height: 14),
-
-              const _MedicationTile(
-                name: "Calcium Tablet",
-                time: "08:00 PM",
-                status: "Upcoming",
               ),
             ],
           ),
@@ -124,121 +219,149 @@ class RelativeMedicationsScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-/// ================= SECTION TITLE =================
+  List<Widget> _buildGroupedDoses() {
+    List<Widget> widgets = [];
 
-class _SectionTitle extends StatelessWidget {
-  final String text;
+    _groupedDoses.forEach((period, doses) {
 
-  const _SectionTitle(this.text);
+      widgets.add(
+        Text(period.toUpperCase(),
+            style: const TextStyle(color: Colors.white54)),
+      );
 
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: TextStyle(
-        color: Colors.white.withOpacity(0.6),
-        fontSize: 12,
-        letterSpacing: 1.2,
-      ),
-    );
-  }
-}
+      widgets.add(const SizedBox(height: 10));
 
-/// ================= MEDICATION TILE =================
-
-class _MedicationTile extends StatelessWidget {
-  final String name;
-  final String time;
-  final String status;
-
-  const _MedicationTile({
-    required this.name,
-    required this.time,
-    required this.status,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Color statusColor;
-
-    switch (status) {
-      case "Taken":
-        statusColor = Colors.green;
-        break;
-      case "Missed":
-        statusColor = Colors.redAccent;
-        break;
-      default:
-        statusColor = Colors.orange;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: statusColor.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-
-          /// STATUS DOT
+      for (final dose in doses) {
+        widgets.add(
           Container(
-            height: 10,
-            width: 10,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: statusColor,
-              shape: BoxShape.circle,
+              color: const Color(0xFF14283C),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: dose.borderColor),
             ),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
+
+                Icon(dose.icon, color: dose.iconColor),
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                    children: [
+                      Text(dose.name,
+                          style: const TextStyle(
+                              color: Colors.white)),
+                      Text(
+                        dose.time.isEmpty ? "--" : dose.time,
+                        style: const TextStyle(
+                            color: Colors.white60),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  time,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white54,
-                  ),
-                ),
+
+                _StatusChip(status: dose.status),
               ],
             ),
           ),
+        );
+      }
+    });
 
-          /// STATUS TEXT
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          )
-        ],
+    return widgets;
+  }
+}
+
+/// MODEL
+class Dose {
+  final String id;
+  final String name;
+  final String time;
+  DoseStatus status;
+
+  Dose({
+    required this.id,
+    required this.name,
+    required this.time,
+    this.status = DoseStatus.pending,
+  });
+
+  IconData get icon {
+    switch (status) {
+      case DoseStatus.taken:
+        return Icons.check_circle;
+      case DoseStatus.missed:
+        return Icons.cancel;
+      default:
+        return Icons.radio_button_unchecked;
+    }
+  }
+
+  Color get iconColor {
+    switch (status) {
+      case DoseStatus.taken:
+        return Colors.greenAccent;
+      case DoseStatus.missed:
+        return Colors.redAccent;
+      default:
+        return Colors.white38;
+    }
+  }
+
+  Color get borderColor {
+    switch (status) {
+      case DoseStatus.taken:
+        return Colors.greenAccent.withOpacity(0.4);
+      case DoseStatus.missed:
+        return Colors.redAccent.withOpacity(0.4);
+      default:
+        return Colors.white.withOpacity(0.05);
+    }
+  }
+}
+
+/// STATUS CHIP
+class _StatusChip extends StatelessWidget {
+  final DoseStatus status;
+
+  const _StatusChip({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+
+    String text;
+    Color bg;
+
+    switch (status) {
+      case DoseStatus.taken:
+        text = "Taken";
+        bg = Colors.greenAccent;
+        break;
+      case DoseStatus.missed:
+        text = "Missed";
+        bg = Colors.redAccent;
+        break;
+      default:
+        text = "Pending";
+        bg = Colors.orangeAccent;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: bg, fontSize: 11),
       ),
     );
   }

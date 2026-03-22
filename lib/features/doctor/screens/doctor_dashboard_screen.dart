@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../services/doctor/dashboard_service.dart';
+import '../../doctor/screens/consultation_screen.dart';
+import '../../doctor/screens/view_reports_screen.dart';
+
 class DoctorDashboardScreen extends StatefulWidget {
   const DoctorDashboardScreen({super.key});
 
@@ -11,10 +15,20 @@ class DoctorDashboardScreen extends StatefulWidget {
 }
 
 class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
+
   String _doctorName = "Doctor";
   bool _loading = true;
 
-  static const Color _accent = Color(0xFF00C2B2);
+  final DoctorDashboardService dashboardService =
+  DoctorDashboardService();
+
+  int totalAppointments = 0;
+  int waitingPatients = 0;
+  int consultationsDone = 0;
+  int emergencyCount = 0;
+
+  Map<String, dynamic>? nextPatient;
+  String? nextAppointmentId; // ✅ NEW
 
   @override
   void initState() {
@@ -24,6 +38,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
 
   Future<void> _initDoctor() async {
     final user = FirebaseAuth.instance.currentUser;
+
     if (user != null) {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -31,13 +46,29 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
           .get();
 
       if (doc.exists) {
-        setState(() {
-          _doctorName = doc.data()?['name'] ?? "Doctor";
-          _loading = false;
-        });
-      } else {
-        setState(() => _loading = false);
+        _doctorName = doc.data()?['name'] ?? "Doctor";
       }
+
+      await _loadDashboard();
+    }
+
+    setState(() => _loading = false);
+  }
+
+  Future<void> _loadDashboard() async {
+    try {
+      final data = await dashboardService.getDashboardData();
+
+      print("Dashboard Data: $data");
+
+      setState(() {
+        totalAppointments = data["total"] ?? 0;
+        waitingPatients = data["waiting"] ?? 0;
+        consultationsDone = data["done"] ?? 0;
+        emergencyCount = data["emergency"] ?? 0;
+      });
+    } catch (e) {
+      print("Dashboard error: $e");
     }
   }
 
@@ -48,168 +79,191 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
     return "Good Evening";
   }
 
-  String _todayDate() {
-    final now = DateTime.now();
-    return "${_weekday(now.weekday)} • ${now.day} ${_month(now.month)} ${now.year}";
-  }
-
-  String _weekday(int day) {
-    const days = [
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-      "Sunday"
-    ];
-    return days[day - 1];
-  }
-
-  String _month(int month) {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
-    ];
-    return months[month - 1];
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF0C1B2A),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
 
-              /// ===== GREETING =====
-              Text(
-                "${_greeting()}, ${_loading ? "..." : "Dr. $_doctorName"}",
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0C1B2A),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadDashboard,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
 
-              const SizedBox(height: 6),
-
-              Text(
-                _todayDate(),
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 13,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              /// ===== METRICS =====
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 1.25,
-                children: const [
-                  _MetricTile(
-                    icon: Icons.calendar_month,
-                    value: "12",
-                    label: "Today's Appointments",
+                /// HEADER
+                Text(
+                  "${_greeting()}, ${_loading ? "..." : "Dr. $_doctorName"}",
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
-                  _MetricTile(
-                    icon: Icons.hourglass_bottom,
-                    value: "5",
-                    label: "Waiting Patients",
-                  ),
-                  _MetricTile(
-                    icon: Icons.check_circle_outline,
-                    value: "7",
-                    label: "Consultations Done",
-                  ),
-                  _MetricTile(
-                    icon: Icons.warning_amber_outlined,
-                    value: "1",
-                    label: "Emergency Flags",
-                    isAlert: true,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              /// ===== PRIMARY ACTION =====
-              const Text(
-                "Quick Actions",
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                  letterSpacing: 1.5,
                 ),
-              ),
 
-              const SizedBox(height: 14),
+                const SizedBox(height: 25),
 
-              _PrimaryActionTile(
-                icon: Icons.play_arrow_rounded,
-                label: "Start Next Consultation",
-              ),
-
-              const SizedBox(height: 12),
-
-              _SecondaryActionTile(
-                icon: Icons.description_outlined,
-                label: "Review Patient Reports",
-              ),
-
-              const SizedBox(height: 30),
-
-              /// ===== NEXT PATIENTS =====
-              const Text(
-                "Next Patients",
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                  letterSpacing: 1.5,
+                /// METRICS
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: 1.25,
+                  children: [
+                    _MetricTile(
+                      icon: Icons.calendar_month,
+                      value: "$totalAppointments",
+                      label: "Today's Appointments",
+                    ),
+                    _MetricTile(
+                      icon: Icons.hourglass_bottom,
+                      value: "$waitingPatients",
+                      label: "Waiting Patients",
+                    ),
+                    _MetricTile(
+                      icon: Icons.check_circle_outline,
+                      value: "$consultationsDone",
+                      label: "Consultations Done",
+                    ),
+                    _MetricTile(
+                      icon: Icons.warning_amber_outlined,
+                      value: "$emergencyCount",
+                      label: "Emergency Flags",
+                      isAlert: true,
+                    ),
+                  ],
                 ),
-              ),
 
-              const SizedBox(height: 14),
+                const SizedBox(height: 30),
 
-              const _PatientQueueTile(
-                token: "12",
-                name: "Rahul Sharma",
-                age: "34",
-                reason: "Gastric Pain",
-                time: "10:30 AM",
-                status: "Waiting",
-              ),
+                /// QUICK ACTIONS
+                const Text(
+                  "Quick Actions",
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
 
-              const _PatientQueueTile(
-                token: "13",
-                name: "Priya Mehta",
-                age: "29",
-                reason: "Follow-up Visit",
-                time: "10:45 AM",
-                status: "Scheduled",
-              ),
+                const SizedBox(height: 12),
 
-              const SizedBox(height: 40),
-            ],
+                /// 🔥 START CONSULTATION
+                GestureDetector(
+                  onTap: () {
+                    if (nextPatient == null || nextAppointmentId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("No patient available")),
+                      );
+                      return;
+                    }
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ConsultationScreen(
+                          patientId: nextPatient!["patientId"] ?? "",
+                          patientName:
+                          nextPatient!["patientName"] ?? "Patient",
+                          appointmentId: nextAppointmentId!, // ✅ PASS ID
+                        ),
+                      ),
+                    );
+                  },
+                  child: const _PrimaryActionTile(
+                    icon: Icons.play_arrow,
+                    label: "Start Consultation",
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                /// VIEW REPORTS
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ViewReportsScreen(),
+                      ),
+                    );
+                  },
+                  child: const _SecondaryActionTile(
+                    icon: Icons.description,
+                    label: "Review Reports",
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                /// NEXT PATIENTS
+                const Text(
+                  "Next Patients",
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                StreamBuilder<QuerySnapshot>(
+                  stream: dashboardService.getNextPatients(),
+                  builder: (context, snapshot) {
+
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    }
+
+                    if (!snapshot.hasData ||
+                        snapshot.data!.docs.isEmpty) {
+                      return const Text(
+                        "No upcoming patients",
+                        style: TextStyle(color: Colors.white54),
+                      );
+                    }
+
+                    final docs = snapshot.data!.docs;
+
+                    /// ✅ SET NEXT PATIENT + ID
+                    nextPatient =
+                    docs.first.data() as Map<String, dynamic>;
+                    nextAppointmentId = docs.first.id;
+
+                    return Column(
+                      children: docs.map<Widget>((doc) {
+
+                        final data =
+                        doc.data() as Map<String, dynamic>;
+
+                        final ts = data["date"] as Timestamp?;
+                        final dt = ts?.toDate();
+
+                        return _PatientQueueTile(
+                          token: (data["token"] ?? "").toString(),
+                          name: data["patientName"] ?? "",
+                          age: (data["age"] ?? "").toString(),
+                          reason: data["department"] ?? "",
+                          time: dt != null
+                              ? "${dt.hour}:${dt.minute.toString().padLeft(2, '0')}"
+                              : "--",
+                          status: data["status"] ?? "",
+                        );
+
+                      }).toList(),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
@@ -217,9 +271,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
   }
 }
 
-/// =========================
-/// METRIC TILE
-/// =========================
+/// ================= WIDGETS =================
 
 class _MetricTile extends StatelessWidget {
   final IconData icon;
@@ -236,7 +288,8 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color =
+
+    final color =
     isAlert ? Colors.redAccent : const Color(0xFF00C2B2);
 
     return Container(
@@ -248,14 +301,14 @@ class _MetricTile extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 22),
+          Icon(icon, color: color),
           const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
               color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
             ),
           ),
           const SizedBox(height: 4),
@@ -263,8 +316,8 @@ class _MetricTile extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 11,
               color: Colors.white54,
+              fontSize: 11,
             ),
           ),
         ],
@@ -272,10 +325,6 @@ class _MetricTile extends StatelessWidget {
     );
   }
 }
-
-/// =========================
-/// PRIMARY ACTION
-/// =========================
 
 class _PrimaryActionTile extends StatelessWidget {
   final IconData icon;
@@ -289,36 +338,27 @@ class _PrimaryActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF00C2B2),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const Icon(Icons.play_arrow_rounded,
-              color: Colors.black, size: 24),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w600,
-              ),
+          Icon(icon, color: Colors.black),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const Icon(Icons.arrow_forward_ios,
-              size: 14, color: Colors.black87),
         ],
       ),
     );
   }
 }
-
-/// =========================
-/// SECONDARY ACTION
-/// =========================
 
 class _SecondaryActionTile extends StatelessWidget {
   final IconData icon;
@@ -332,37 +372,27 @@ class _SecondaryActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           Icon(icon, color: Colors.white70),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white),
           ),
-          const Icon(Icons.arrow_forward_ios,
-              size: 14, color: Colors.white38),
         ],
       ),
     );
   }
 }
 
-/// =========================
-/// PATIENT QUEUE TILE
-/// =========================
-
 class _PatientQueueTile extends StatelessWidget {
+
   final String token;
   final String name;
   final String age;
@@ -381,67 +411,41 @@ class _PatientQueueTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color statusColor =
-    status == "Waiting" ? Colors.orange : Colors.blueAccent;
+
+    final color =
+    status.toLowerCase() == "waiting"
+        ? Colors.orange
+        : Colors.blueAccent;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-
-          /// Token
-          Container(
-            height: 40,
-            width: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: statusColor.withOpacity(0.15),
-            ),
+          CircleAvatar(
+            backgroundColor: color.withOpacity(0.2),
             child: Text(
               token,
-              style: TextStyle(
-                color: statusColor,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: color),
             ),
           ),
-
-          const SizedBox(width: 14),
-
-          /// Info
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "$name ($age)",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  reason,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white60,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "$time • $status",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: statusColor,
-                  ),
-                ),
+                Text(name,
+                    style: const TextStyle(color: Colors.white)),
+                Text(reason,
+                    style: const TextStyle(
+                        color: Colors.white54, fontSize: 12)),
+                Text("$time • $status",
+                    style: TextStyle(
+                        color: color, fontSize: 11)),
               ],
             ),
           ),

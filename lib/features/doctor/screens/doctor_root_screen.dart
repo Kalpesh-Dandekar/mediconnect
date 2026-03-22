@@ -5,7 +5,7 @@ import 'doctor_dashboard_screen.dart';
 import 'today_appointments_screen.dart';
 import 'patients_screen.dart';
 import 'doctor_profile_screen.dart';
-import 'doctor_emergency_screen.dart'; // 🔥 NEW IMPORT
+import 'doctor_emergency_screen.dart';
 
 class DoctorRootScreen extends StatefulWidget {
   const DoctorRootScreen({super.key});
@@ -19,19 +19,20 @@ class _DoctorRootScreenState extends State<DoctorRootScreen> {
 
   static const Color _accentColor = Color(0xFF00C2B2);
 
-  final List<Widget> _screens = const [
-    DoctorDashboardScreen(),
-    TodayAppointmentsScreen(),
-    DoctorEmergencyScreen(), // 🔥 NEW SCREEN (CENTER)
-    PatientsScreen(),
-    DoctorProfileScreen(),
+  /// ❌ REMOVED const HERE (IMPORTANT FIX)
+  final List<Widget> _screens = [
+    const DoctorDashboardScreen(),
+    const TodayAppointmentsScreen(),
+    const DoctorEmergencyScreen(),
+    const PatientsScreen(),
+    DoctorProfileScreen(), // ✅ now allowed
   ];
 
   final List<_NavItem> _items = const [
     _NavItem(Icons.dashboard_outlined, Icons.dashboard, "Home"),
     _NavItem(Icons.calendar_month_outlined, Icons.calendar_month, "Appointments"),
 
-    /// 🔥 EMERGENCY (CENTER)
+    /// 🔥 EMERGENCY
     _NavItem(Icons.warning_amber_outlined, Icons.warning_amber, "Emergency"),
 
     _NavItem(Icons.people_outline, Icons.people, "Patients"),
@@ -112,7 +113,7 @@ class _DoctorRootScreenState extends State<DoctorRootScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
 
-              /// 🔥 ICON
+              /// ICON
               Icon(
                 selected ? item.activeIcon : item.icon,
                 size: isEmergency ? 24 : 20,
@@ -123,7 +124,7 @@ class _DoctorRootScreenState extends State<DoctorRootScreen> {
 
               const SizedBox(height: 2),
 
-              /// 🔥 LABEL
+              /// LABEL
               Text(
                 item.label,
                 maxLines: 1,
