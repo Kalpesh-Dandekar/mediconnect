@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 
 import 'staff_dashboard_screen.dart';
 import 'staff_appointments_screen.dart';
-import 'staff_reports_screen.dart';
-import 'staff_patients_screen.dart';
 import 'staff_profile_screen.dart';
+import 'staff_emergency_screen.dart';
 
 class StaffRootScreen extends StatefulWidget {
   const StaffRootScreen({super.key});
@@ -19,19 +18,18 @@ class _StaffRootScreenState extends State<StaffRootScreen> {
 
   static const Color _accentColor = Color(0xFF2979FF);
 
-  final List<Widget> _screens = const [
-    StaffDashboardScreen(),
-    StaffAppointmentsScreen(),
-    StaffReportsScreen(),
-    StaffPatientsScreen(),
-    StaffProfileScreen(),
+  /// 🔥 UPDATED SCREENS (REMOVED PATIENTS)
+  final List<Widget> _screens = [
+    const StaffDashboardScreen(),
+    const StaffAppointmentsScreen(),
+    const StaffEmergencyScreen(),
+    const StaffProfileScreen(),
   ];
 
   final List<_NavItem> _items = const [
     _NavItem(Icons.dashboard_outlined, Icons.dashboard, "Home"),
     _NavItem(Icons.calendar_month_outlined, Icons.calendar_month, "Appointments"),
-    _NavItem(Icons.science_outlined, Icons.science, "Reports"),
-    _NavItem(Icons.people_outline, Icons.people, "Patients"),
+    _NavItem(Icons.warning_amber_outlined, Icons.warning_amber, "Emergency"),
     _NavItem(Icons.person_outline, Icons.person, "Profile"),
   ];
 
