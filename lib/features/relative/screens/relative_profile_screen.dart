@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:mediconnect/services/relative/relative_profile_service.dart';
 
 class RelativeProfileScreen extends StatefulWidget {
@@ -31,7 +32,39 @@ class _RelativeProfileScreenState
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _init();
+  }
+
+  /// 🔥 INIT (PROFILE + FCM TOKEN)
+  Future<void> _init() async {
+    await _loadProfile();
+    await _saveFCMToken();
+  }
+
+  /// 🔥 SAVE FCM TOKEN
+  Future<void> _saveFCMToken() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final token = await FirebaseMessaging.instance.getToken();
+
+      if (token == null) return;
+
+      await FirebaseMessaging.instance.requestPermission();
+
+      await FirebaseMessaging.instance.subscribeToTopic("all");
+
+      await _profileService.saveFCMToken(
+        userId: user.uid,
+        token: token,
+      );
+
+      print("✅ FCM TOKEN SAVED: $token");
+
+    } catch (e) {
+      print("❌ FCM ERROR: $e");
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -92,7 +125,6 @@ class _RelativeProfileScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// HEADER + EDIT BUTTON
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -122,7 +154,6 @@ class _RelativeProfileScreenState
 
               const SizedBox(height: 30),
 
-              /// AVATAR
               Center(
                 child: Column(
                   children: [
@@ -159,7 +190,6 @@ class _RelativeProfileScreenState
 
               const SizedBox(height: 35),
 
-              /// DETAILS
               _sectionTitle("Account Information"),
 
               const SizedBox(height: 14),
@@ -171,7 +201,6 @@ class _RelativeProfileScreenState
 
               const SizedBox(height: 40),
 
-              /// LOGOUT
               GestureDetector(
                 onTap: () async {
                   await FirebaseAuth.instance.signOut();

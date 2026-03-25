@@ -12,7 +12,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  /// Initialize medicine reminder notifications
+  /// 🔥 Initialize Notifications
   await ReminderService.init();
 
   runApp(const MediConnectApp());

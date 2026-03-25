@@ -14,7 +14,8 @@ class DoctorDashboardScreen extends StatefulWidget {
       _DoctorDashboardScreenState();
 }
 
-class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
+class _DoctorDashboardScreenState
+    extends State<DoctorDashboardScreen> {
 
   String _doctorName = "Doctor";
   bool _loading = true;
@@ -28,7 +29,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
   int emergencyCount = 0;
 
   Map<String, dynamic>? nextPatient;
-  String? nextAppointmentId; // ✅ NEW
+  String? nextAppointmentId;
 
   @override
   void initState() {
@@ -52,14 +53,16 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
       await _loadDashboard();
     }
 
-    setState(() => _loading = false);
+    if (mounted) {
+      setState(() => _loading = false);
+    }
   }
 
   Future<void> _loadDashboard() async {
     try {
       final data = await dashboardService.getDashboardData();
 
-      print("Dashboard Data: $data");
+      if (!mounted) return;
 
       setState(() {
         totalAppointments = data["total"] ?? 0;
@@ -67,6 +70,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
         consultationsDone = data["done"] ?? 0;
         emergencyCount = data["emergency"] ?? 0;
       });
+
     } catch (e) {
       print("Dashboard error: $e");
     }
@@ -152,12 +156,13 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
 
                 const SizedBox(height: 12),
 
-                /// 🔥 START CONSULTATION
                 GestureDetector(
                   onTap: () {
-                    if (nextPatient == null || nextAppointmentId == null) {
+                    if (nextPatient == null ||
+                        nextAppointmentId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("No patient available")),
+                        const SnackBar(
+                            content: Text("No patient available")),
                       );
                       return;
                     }
@@ -166,10 +171,12 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => ConsultationScreen(
-                          patientId: nextPatient!["patientId"] ?? "",
+                          patientId:
+                          nextPatient!["patientId"] ?? "",
                           patientName:
-                          nextPatient!["patientName"] ?? "Patient",
-                          appointmentId: nextAppointmentId!, // ✅ PASS ID
+                          nextPatient!["patientName"] ??
+                              "Patient",
+                          appointmentId: nextAppointmentId!,
                         ),
                       ),
                     );
@@ -182,13 +189,13 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
 
                 const SizedBox(height: 10),
 
-                /// VIEW REPORTS
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const ViewReportsScreen(),
+                        builder: (_) =>
+                        const ViewReportsScreen(),
                       ),
                     );
                   },
@@ -231,7 +238,6 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
 
                     final docs = snapshot.data!.docs;
 
-                    /// ✅ SET NEXT PATIENT + ID
                     nextPatient =
                     docs.first.data() as Map<String, dynamic>;
                     nextAppointmentId = docs.first.id;
@@ -392,7 +398,6 @@ class _SecondaryActionTile extends StatelessWidget {
 }
 
 class _PatientQueueTile extends StatelessWidget {
-
   final String token;
   final String name;
   final String age;
@@ -436,13 +441,16 @@ class _PatientQueueTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(color: Colors.white)),
+                    style:
+                    const TextStyle(color: Colors.white)),
                 Text(reason,
                     style: const TextStyle(
-                        color: Colors.white54, fontSize: 12)),
+                        color: Colors.white54,
+                        fontSize: 12)),
                 Text("$time • $status",
                     style: TextStyle(
                         color: color, fontSize: 11)),

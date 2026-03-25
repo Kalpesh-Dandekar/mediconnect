@@ -28,7 +28,7 @@ class DoctorDashboardService {
       return status == "waiting";
     }).length;
 
-    /// 🔥 CONSULTATIONS (FIXED FIELD)
+    /// 🔥 CONSULTATIONS
     final consultations = await _firestore
         .collection("consultations")
         .where("assignedTo", isEqualTo: doctorId)
@@ -36,17 +36,13 @@ class DoctorDashboardService {
 
     final done = consultations.docs.length;
 
-    /// 🔥 EMERGENCIES (FIXED FIELD + FILTER)
+    /// 🔥 UPDATED: ALL ACTIVE EMERGENCIES
     final emergencies = await _firestore
         .collection("emergencies")
-        .where("assignedTo", isEqualTo: doctorId)
+        .where("status", isEqualTo: "active")
         .get();
 
-    final emergencyCount = emergencies.docs.where((e) {
-      final status =
-      (e["status"] ?? "").toString().toLowerCase().trim();
-      return status == "active";
-    }).length;
+    final emergencyCount = emergencies.docs.length;
 
     return {
       "total": total,
@@ -56,7 +52,7 @@ class DoctorDashboardService {
     };
   }
 
-  /// 🔥 NEXT PATIENTS STREAM
+  /// 🔥 NEXT PATIENTS
   Stream<QuerySnapshot> getNextPatients() {
     if (_user == null) {
       throw Exception("Doctor not logged in");
@@ -67,6 +63,15 @@ class DoctorDashboardService {
         .where("doctorId", isEqualTo: _user!.uid)
         .orderBy("date")
         .limit(5)
+        .snapshots();
+  }
+
+  /// 🔥 NEW: EMERGENCY STREAM (future use)
+  Stream<QuerySnapshot> getEmergencyStream() {
+    return _firestore
+        .collection("emergencies")
+        .where("status", isEqualTo: "active")
+        .orderBy("createdAt", descending: true)
         .snapshots();
   }
 }

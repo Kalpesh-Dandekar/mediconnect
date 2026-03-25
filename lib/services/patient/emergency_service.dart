@@ -5,7 +5,7 @@ class EmergencyService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// 🔹 Create Emergency Request (UPDATED)
+  /// 🔥 CREATE EMERGENCY + SEND ALERTS
   Future<void> createEmergency(String type) async {
     final user = _auth.currentUser;
 
@@ -13,33 +13,71 @@ class EmergencyService {
       throw Exception("User not logged in");
     }
 
-    /// 🔥 Fetch patient details
-    final userDoc = await _firestore
-        .collection("users")
-        .doc(user.uid)
-        .get();
+    /// 🔹 Get patient details
+    final userDoc =
+    await _firestore.collection("users").doc(user.uid).get();
 
     final data = userDoc.data();
 
     final patientName = data?["name"] ?? "Patient";
+    final relativeId = data?["relativeId"];
+    final doctorId = data?["doctorId"];
 
-    await _firestore.collection("emergencies").add({
+    /// 🔥 Dynamic message
+    String message;
+
+    if (type == "ambulance") {
+      message = "🚨 URGENT: $patientName requested an ambulance!";
+    } else if (type == "doctor") {
+      message = "👨‍⚕️ $patientName requested a doctor consultation";
+    } else if (type == "caregiver") {
+      message = "👨‍👩‍👧 $patientName needs caregiver assistance";
+    } else {
+      message = "🚨 Emergency triggered by $patientName";
+    }
+
+    /// 🔹 Create emergency record
+    final emergencyRef = await _firestore.collection("emergencies").add({
       "patientId": user.uid,
-      "patientName": patientName, // ✅ NEW FIELD
-
-      "type": type, // ambulance / doctor / caregiver
+      "patientName": patientName,
+      "type": type,
       "status": "active",
       "assignedTo": "",
-
-      /// optional
-      "message": "",
-
+      "message": message,
       "createdAt": FieldValue.serverTimestamp(),
       "updatedAt": FieldValue.serverTimestamp(),
     });
+
+    /// 🔥 SEND TO RELATIVE
+    if (relativeId != null) {
+      await _firestore.collection("notifications").add({
+        "toUserId": relativeId,
+        "type": "emergency",
+        "message": message,
+        "timestamp": FieldValue.serverTimestamp(),
+        "patientId": user.uid,
+        "emergencyId": emergencyRef.id,
+      });
+
+      print("🚨 Alert sent to relative");
+    }
+
+    /// 🔥 SEND TO DOCTOR
+    if (doctorId != null) {
+      await _firestore.collection("notifications").add({
+        "toUserId": doctorId,
+        "type": "emergency",
+        "message": message,
+        "timestamp": FieldValue.serverTimestamp(),
+        "patientId": user.uid,
+        "emergencyId": emergencyRef.id,
+      });
+
+      print("🚨 Alert sent to doctor");
+    }
   }
 
-  /// 🔥 Get active emergencies (doctor view)
+  /// 🔥 ACTIVE EMERGENCIES (doctor view)
   Stream<QuerySnapshot> getActiveEmergencies() {
     return _firestore
         .collection("emergencies")
@@ -48,7 +86,7 @@ class EmergencyService {
         .snapshots();
   }
 
-  /// 🔥 Accept emergency (doctor/staff)
+  /// 🔥 ACCEPT EMERGENCY
   Future<void> acceptEmergency(String emergencyId) async {
     final user = _auth.currentUser;
 
@@ -61,7 +99,7 @@ class EmergencyService {
     });
   }
 
-  /// 🔥 Complete emergency
+  /// 🔥 COMPLETE EMERGENCY
   Future<void> completeEmergency(String emergencyId) async {
     await _firestore.collection("emergencies").doc(emergencyId).update({
       "status": "completed",
@@ -69,7 +107,7 @@ class EmergencyService {
     });
   }
 
-  /// 🔥 Get emergencies assigned to current doctor (future use)
+  /// 🔥 MY EMERGENCIES (doctor)
   Stream<QuerySnapshot> getMyEmergencies() {
     final user = _auth.currentUser;
 

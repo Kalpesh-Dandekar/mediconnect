@@ -147,7 +147,6 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
 
               const SizedBox(height: 28),
 
-              /// ADHERENCE CARD
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -222,6 +221,14 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                 medicineId: dose.id,
                 status: dose.status.name,
               );
+
+              if (dose.status == DoseStatus.missed) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("⚠️ Missed dose recorded"),
+                  ),
+                );
+              }
             },
             child: Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -324,7 +331,6 @@ class Dose {
   }
 }
 
-/// STATUS CHIP
 class _StatusChip extends StatelessWidget {
 
   final DoseStatus status;

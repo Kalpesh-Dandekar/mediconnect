@@ -8,7 +8,7 @@ class ReminderService {
   static final FlutterLocalNotificationsPlugin _notifications =
   FlutterLocalNotificationsPlugin();
 
-  /// Initialize notifications
+  /// 🔥 INIT
   static Future<void> init() async {
 
     tz.initializeTimeZones();
@@ -20,50 +20,59 @@ class ReminderService {
     InitializationSettings(android: androidInit);
 
     await _notifications.initialize(settings);
+
+    /// 🔥 REQUEST PERMISSION (IMPORTANT FOR ANDROID 13+)
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+
+    print("✅ Notification Initialized");
   }
 
-  /// Convert 12-hour time string to DateTime
-  static DateTime _parseTime(String time) {
-
-    final parts = time.split(" ");
-    final hm = parts[0].split(":");
-
-    int hour = int.parse(hm[0]);
-    int minute = int.parse(hm[1]);
-
-    final period = parts[1];
-
-    if (period == "PM" && hour != 12) hour += 12;
-    if (period == "AM" && hour == 12) hour = 0;
-
-    final now = DateTime.now();
-
-    return DateTime(
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
-  }
-
-  /// Schedule daily medicine reminder (with duplicate prevention)
+  /// 🔥 DEBUG MODE (INSTANT NOTIFICATION)
   static Future<void> scheduleReminder({
     required String medicineName,
     required String time,
     required int id,
   }) async {
 
-    final prefs = await SharedPreferences.getInstance();
+    const AndroidNotificationDetails androidDetails =
+    AndroidNotificationDetails(
+      'medicine_channel',
+      'Medicine Reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
 
+    const NotificationDetails details =
+    NotificationDetails(android: androidDetails);
+
+    /// 🔥 INSTANT SHOW (FOR TESTING)
+    await _notifications.show(
+      id,
+      "Medicine Reminder (TEST)",
+      "Time to take $medicineName",
+      details,
+    );
+
+    print("🔥 TEST NOTIFICATION TRIGGERED");
+  }
+
+  /// 🔁 LATER USE (REAL SCHEDULING)
+  static Future<void> scheduleRealReminder({
+    required String medicineName,
+    required String time,
+    required int id,
+  }) async {
+
+    final prefs = await SharedPreferences.getInstance();
     final reminderKey = "reminder_$id";
 
-    /// Prevent duplicate scheduling
-    if (prefs.getBool(reminderKey) == true) {
-      return;
-    }
+    if (prefs.getBool(reminderKey) == true) return;
 
-    final scheduledTime = _parseTime(time);
+    final now = DateTime.now();
+    final scheduledTime = now.add(const Duration(minutes: 1)); // test
 
     final tzTime = tz.TZDateTime.from(scheduledTime, tz.local);
 
@@ -85,32 +94,10 @@ class ReminderService {
       tzTime,
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
     );
 
-    /// Save reminder as scheduled
     await prefs.setBool(reminderKey, true);
-  }
 
-  /// Cancel reminder (if medicine removed)
-  static Future<void> cancelReminder(int id) async {
-
-    final prefs = await SharedPreferences.getInstance();
-
-    final reminderKey = "reminder_$id";
-
-    await _notifications.cancel(id);
-
-    await prefs.remove(reminderKey);
-  }
-
-  /// Clear all reminders (useful for testing)
-  static Future<void> clearAllReminders() async {
-
-    final prefs = await SharedPreferences.getInstance();
-
-    await _notifications.cancelAll();
-
-    await prefs.clear();
+    print("⏰ Scheduled Reminder Set");
   }
 }

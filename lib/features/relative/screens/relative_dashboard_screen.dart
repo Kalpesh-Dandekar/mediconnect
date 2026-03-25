@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:mediconnect/services/relative/relative_link_service.dart';
 import 'package:mediconnect/services/relative/relative_patient_service.dart';
 import 'package:mediconnect/services/relative/relative_dashboard_service.dart';
+import 'package:mediconnect/features/relative/screens/relative_notifications_screen.dart';
 
 class RelativeDashboardScreen extends StatefulWidget {
   const RelativeDashboardScreen({super.key});
@@ -21,7 +24,8 @@ class _RelativeDashboardScreenState
   final RelativeDashboardService _dashboardService =
   RelativeDashboardService();
 
-  final TextEditingController _codeController = TextEditingController();
+  final TextEditingController _codeController =
+  TextEditingController();
 
   bool isConnecting = false;
   bool isLinked = false;
@@ -116,6 +120,8 @@ class _RelativeDashboardScreenState
   @override
   Widget build(BuildContext context) {
 
+    final user = FirebaseAuth.instance.currentUser;
+
     if (loading) {
       return const Scaffold(
         backgroundColor: Color(0xFF0C1B2A),
@@ -132,7 +138,6 @@ class _RelativeDashboardScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// HEADER
               const Text(
                 "Care Overview",
                 style: TextStyle(
@@ -156,14 +161,77 @@ class _RelativeDashboardScreenState
 
               const SizedBox(height: 20),
 
-              /// CONNECT CARD
+              /// 🔥 UPDATED ALERT CARD
+              if (user != null)
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection("notifications")
+                      .where("toUserId", isEqualTo: user.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+
+                    final docs =
+                    snapshot.hasData ? snapshot.data!.docs : [];
+
+                    final count = docs.length;
+
+                    if (count == 0) return const SizedBox();
+
+                    final hasEmergency = docs.any((d) =>
+                    (d["type"] ?? "") == "emergency");
+
+                    final message = hasEmergency
+                        ? "🚨 Emergency alert received!"
+                        : "You have $count medication alerts";
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                            const RelativeNotificationsScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: Colors.redAccent.withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          children: [
+
+                            const Icon(Icons.warning,
+                                color: Colors.redAccent),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: Text(
+                                message,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+
+                            const Icon(Icons.arrow_forward_ios,
+                                color: Colors.white54, size: 16),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
               if (!isLinked) _connectCard(),
 
-              /// DASHBOARD
               if (isLinked) ...[
                 const SizedBox(height: 10),
 
-                /// SECTION TITLE
                 Text(
                   "Today's Summary",
                   style: TextStyle(
@@ -175,7 +243,6 @@ class _RelativeDashboardScreenState
 
                 const SizedBox(height: 14),
 
-                /// EMPTY STATE
                 if (total == 0)
                   const Center(
                     child: Padding(
@@ -187,7 +254,6 @@ class _RelativeDashboardScreenState
                     ),
                   ),
 
-                /// GRID
                 if (total > 0)
                   GridView.count(
                     shrinkWrap: true,
@@ -228,7 +294,6 @@ class _RelativeDashboardScreenState
 
                 const SizedBox(height: 30),
 
-                /// 🔥 CARE GUIDELINES SECTION
                 _careGuidelines(),
               ],
 
@@ -304,7 +369,6 @@ class _RelativeDashboardScreenState
     );
   }
 
-  /// 🔥 CARE GUIDELINES
   Widget _careGuidelines() {
     return Container(
       padding: const EdgeInsets.all(16),

@@ -15,6 +15,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   bool _loading = false;
 
   void _showMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );

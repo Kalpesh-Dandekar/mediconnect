@@ -60,4 +60,14 @@ class RelativeProfileService {
       "relationship": relationship,
     });
   }
+
+  /// 🔥 SAVE FCM TOKEN (NEW)
+  Future<void> saveFCMToken({
+    required String userId,
+    required String token,
+  }) async {
+    await _firestore.collection("users").doc(userId).set({
+      "fcmToken": token,
+    }, SetOptions(merge: true));
+  }
 }

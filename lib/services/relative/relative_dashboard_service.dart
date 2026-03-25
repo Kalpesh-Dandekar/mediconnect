@@ -5,7 +5,7 @@ class RelativeDashboardService {
 
   Future<Map<String, dynamic>> getDashboardData(String patientId) async {
     try {
-      /// MEDICINES
+      /// 🔥 MEDICINES
       final meds = await _firestore
           .collection("medicines")
           .where("patientId", isEqualTo: patientId)
@@ -28,7 +28,7 @@ class RelativeDashboardService {
         }
       }
 
-      /// NEXT VISIT
+      /// 🔥 NEXT VISIT
       final nextVisitSnap = await _firestore
           .collection("appointments")
           .where("patientId", isEqualTo: patientId)
@@ -48,7 +48,7 @@ class RelativeDashboardService {
         nextVisitDoctor = data["doctorName"] ?? "";
       }
 
-      /// REPORT
+      /// 🔥 REPORT
       final reports = await _firestore
           .collection("reports")
           .where("patientId", isEqualTo: patientId)
@@ -62,6 +62,15 @@ class RelativeDashboardService {
         reportStatus = reports.docs.first.data()["status"] ?? "--";
       }
 
+      /// 🔥 NEW: EMERGENCIES COUNT
+      final emergencies = await _firestore
+          .collection("emergencies")
+          .where("patientId", isEqualTo: patientId)
+          .where("status", isEqualTo: "active")
+          .get();
+
+      final emergencyCount = emergencies.docs.length;
+
       return {
         "taken": taken,
         "total": total,
@@ -69,6 +78,7 @@ class RelativeDashboardService {
         "nextVisitDate": nextVisitDate,
         "nextVisitDoctor": nextVisitDoctor,
         "reportStatus": reportStatus,
+        "emergencyCount": emergencyCount,
       };
     } catch (e) {
       print("Dashboard error: $e");
@@ -79,6 +89,7 @@ class RelativeDashboardService {
         "nextVisitDate": "--",
         "nextVisitDoctor": "",
         "reportStatus": "--",
+        "emergencyCount": 0,
       };
     }
   }

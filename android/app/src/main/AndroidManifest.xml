@@ -9,6 +9,9 @@
     <!-- Required for exact scheduled reminders -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
+    <!-- 🔥 ADD THIS (IMPORTANT FOR BACKGROUND NOTIFICATIONS) -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
