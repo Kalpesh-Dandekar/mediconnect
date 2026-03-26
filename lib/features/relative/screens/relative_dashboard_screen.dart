@@ -19,13 +19,10 @@ class _RelativeDashboardScreenState
     extends State<RelativeDashboardScreen> {
 
   final RelativeLinkService _linkService = RelativeLinkService();
-  final RelativePatientService _patientService =
-  RelativePatientService();
-  final RelativeDashboardService _dashboardService =
-  RelativeDashboardService();
+  final RelativePatientService _patientService = RelativePatientService();
+  final RelativeDashboardService _dashboardService = RelativeDashboardService();
 
-  final TextEditingController _codeController =
-  TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
 
   bool isConnecting = false;
   bool isLinked = false;
@@ -56,14 +53,12 @@ class _RelativeDashboardScreenState
         return;
       }
 
-      final patient =
-      await _patientService.getPatient(user.uid);
+      final patient = await _patientService.getPatient(user.uid);
 
       if (patient != null) {
         patientId = patient['id'];
         patientName = patient['name'] ?? "Patient";
         isLinked = true;
-
         await _loadDashboard();
       } else {
         isLinked = false;
@@ -79,8 +74,7 @@ class _RelativeDashboardScreenState
   Future<void> _loadDashboard() async {
     if (patientId == null) return;
 
-    final data =
-    await _dashboardService.getDashboardData(patientId!);
+    final data = await _dashboardService.getDashboardData(patientId!);
 
     setState(() {
       taken = data["taken"];
@@ -97,7 +91,6 @@ class _RelativeDashboardScreenState
     if (user == null) return;
 
     final code = _codeController.text.trim();
-
     if (code.isEmpty) return;
 
     setState(() => isConnecting = true);
@@ -161,7 +154,7 @@ class _RelativeDashboardScreenState
 
               const SizedBox(height: 20),
 
-              /// 🔥 UPDATED ALERT CARD
+              /// ALERT
               if (user != null)
                 StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
@@ -173,16 +166,10 @@ class _RelativeDashboardScreenState
                     final docs =
                     snapshot.hasData ? snapshot.data!.docs : [];
 
-                    final count = docs.length;
+                    if (docs.isEmpty) return const SizedBox();
 
-                    if (count == 0) return const SizedBox();
-
-                    final hasEmergency = docs.any((d) =>
-                    (d["type"] ?? "") == "emergency");
-
-                    final message = hasEmergency
-                        ? "🚨 Emergency alert received!"
-                        : "You have $count medication alerts";
+                    final hasEmergency = docs.any(
+                            (d) => (d["type"] ?? "") == "emergency");
 
                     return GestureDetector(
                       onTap: () {
@@ -201,23 +188,22 @@ class _RelativeDashboardScreenState
                           color: Colors.redAccent.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: Colors.redAccent.withOpacity(0.4)),
+                            color: Colors.redAccent.withOpacity(0.4),
+                          ),
                         ),
                         child: Row(
                           children: [
-
                             const Icon(Icons.warning,
                                 color: Colors.redAccent),
-
                             const SizedBox(width: 12),
-
                             Expanded(
                               child: Text(
-                                message,
+                                hasEmergency
+                                    ? "🚨 Emergency alert received!"
+                                    : "You have ${docs.length} alerts",
                                 style: const TextStyle(color: Colors.white),
                               ),
                             ),
-
                             const Icon(Icons.arrow_forward_ios,
                                 color: Colors.white54, size: 16),
                           ],
@@ -232,65 +218,31 @@ class _RelativeDashboardScreenState
               if (isLinked) ...[
                 const SizedBox(height: 10),
 
-                Text(
-                  "Today's Summary",
+                const Text(
+                  "TODAY",
                   style: TextStyle(
                     fontSize: 12,
-                    letterSpacing: 1.2,
-                    color: Colors.white.withOpacity(0.6),
+                    letterSpacing: 1.4,
+                    color: Colors.white54,
                   ),
                 ),
 
                 const SizedBox(height: 14),
 
-                if (total == 0)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: 40),
-                      child: Text(
-                        "No health data available",
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ),
-
-                if (total > 0)
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.25,
-                    children: [
-                      _DashboardCard(
-                        icon: Icons.medication_outlined,
-                        title: "Medication",
-                        value: "$taken / $total",
-                        subtitle: "$taken taken",
-                      ),
-                      _DashboardCard(
-                        icon: Icons.access_time,
-                        title: "Next Dose",
-                        value: nextDose,
-                        subtitle: "",
-                      ),
-                      _DashboardCard(
-                        icon: Icons.event,
-                        title: "Next Visit",
-                        value: nextVisitDate,
-                        subtitle: nextVisitDoctor,
-                      ),
-                      _DashboardCard(
-                        icon: Icons.description_outlined,
-                        title: "Reports",
-                        value: reportStatus == "pending"
-                            ? "Pending"
-                            : "Available",
-                        subtitle: "",
-                      ),
-                    ],
-                  ),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 1.2,
+                  children: [
+                    _DashboardCard(Icons.medication, "Medication", "$taken / $total"),
+                    _DashboardCard(Icons.access_time, "Next Dose", nextDose),
+                    _DashboardCard(Icons.event, "Next Visit", nextVisitDate),
+                    _DashboardCard(Icons.description, "Reports", reportStatus),
+                  ],
+                ),
 
                 const SizedBox(height: 30),
 
@@ -307,64 +259,74 @@ class _RelativeDashboardScreenState
 
   Widget _connectCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1F3B5C), Color(0xFF14283C)],
-        ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         children: [
 
           const Row(
             children: [
-              Icon(Icons.link, color: Colors.tealAccent),
+              Icon(Icons.link, color: Color(0xFFFFB703)),
               SizedBox(width: 8),
               Text(
                 "Connect to Patient",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(color: Colors.white),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          TextField(
-            controller: _codeController,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: "Enter 6-digit code",
-              hintStyle:
-              TextStyle(color: Colors.white.withOpacity(0.5)),
-              filled: true,
-              fillColor: Colors.black.withOpacity(0.3),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
+          _inputField(_codeController, "Enter 6-digit code"),
+
+          const SizedBox(height: 14),
+
+          GestureDetector(
+            onTap: _connectPatient,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF9F1C), Color(0xFFFFB703)],
+                ),
               ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: isConnecting ? null : _connectPatient,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.tealAccent,
-                foregroundColor: Colors.black,
-              ),
+              alignment: Alignment.center,
               child: isConnecting
-                  ? const CircularProgressIndicator()
-                  : const Text("Connect"),
+                  ? const CircularProgressIndicator(color: Colors.black)
+                  : const Text(
+                "Connect",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _inputField(TextEditingController c, String h) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: TextField(
+        controller: c,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: h,
+          hintStyle: const TextStyle(color: Colors.white38),
+          border: InputBorder.none,
+        ),
       ),
     );
   }
@@ -373,98 +335,68 @@ class _RelativeDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          const Row(
-            children: [
-              Icon(Icons.health_and_safety,
-                  color: Colors.tealAccent, size: 18),
-              SizedBox(width: 8),
-              Text(
-                "Care Guidelines",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          _guideline("Ensure patient takes medicines on time"),
-          _guideline("Monitor missed doses regularly"),
-          _guideline("Attend scheduled doctor visits"),
-          _guideline("Check reports for updates"),
-          _guideline("Watch for unusual symptoms"),
-        ],
-      ),
-    );
-  }
-
-  Widget _guideline(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("• ",
-              style: TextStyle(color: Colors.tealAccent)),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-            ),
-          ),
+        children: const [
+          Text("CARE GUIDELINES",
+              style: TextStyle(color: Colors.white54)),
+          SizedBox(height: 10),
+          Text("• Ensure patient takes medicines on time",
+              style: TextStyle(color: Colors.white70)),
+          Text("• Monitor missed doses regularly",
+              style: TextStyle(color: Colors.white70)),
+          Text("• Attend scheduled doctor visits",
+              style: TextStyle(color: Colors.white70)),
+          Text("• Check reports regularly",
+              style: TextStyle(color: Colors.white70)),
         ],
       ),
     );
   }
 }
 
+/// 🔥 UPDATED CARD
 class _DashboardCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
-  final String subtitle;
 
-  const _DashboardCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.subtitle,
-  });
+  const _DashboardCard(this.icon, this.title, this.value);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          Icon(icon, size: 18, color: Colors.tealAccent),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.tealAccent.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: Colors.tealAccent, size: 20),
+          ),
 
           const Spacer(),
 
           Text(
             value,
             style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
               color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
             ),
           ),
 
@@ -473,16 +405,9 @@ class _DashboardCard extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 12,
-              color: Colors.white70,
-            ),
-          ),
-
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.white54,
+              color: Colors.white60,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

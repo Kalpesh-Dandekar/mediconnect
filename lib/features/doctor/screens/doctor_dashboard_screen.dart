@@ -110,34 +110,34 @@ class _DoctorDashboardScreenState
 
                 const SizedBox(height: 25),
 
-                /// METRICS
+                /// 🔥 METRICS (UPGRADED)
                 GridView.count(
                   crossAxisCount: 2,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisSpacing: 14,
                   mainAxisSpacing: 14,
-                  childAspectRatio: 1.25,
+                  childAspectRatio: 1.2,
                   children: [
                     _MetricTile(
                       icon: Icons.calendar_month,
                       value: "$totalAppointments",
-                      label: "Today's Appointments",
+                      label: "Appointments",
                     ),
                     _MetricTile(
                       icon: Icons.hourglass_bottom,
                       value: "$waitingPatients",
-                      label: "Waiting Patients",
+                      label: "Waiting",
                     ),
                     _MetricTile(
                       icon: Icons.check_circle_outline,
                       value: "$consultationsDone",
-                      label: "Consultations Done",
+                      label: "Completed",
                     ),
                     _MetricTile(
                       icon: Icons.warning_amber_outlined,
                       value: "$emergencyCount",
-                      label: "Emergency Flags",
+                      label: "Emergency",
                       isAlert: true,
                     ),
                   ],
@@ -156,6 +156,7 @@ class _DoctorDashboardScreenState
 
                 const SizedBox(height: 12),
 
+                /// 🔥 PRIMARY ACTION
                 GestureDetector(
                   onTap: () {
                     if (nextPatient == null ||
@@ -181,14 +182,36 @@ class _DoctorDashboardScreenState
                       ),
                     );
                   },
-                  child: const _PrimaryActionTile(
-                    icon: Icons.play_arrow,
-                    label: "Start Consultation",
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFFF9F1C),
+                          Color(0xFFFFB703),
+                        ],
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.play_arrow, color: Colors.black),
+                        SizedBox(width: 12),
+                        Text(
+                          "Start Consultation",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
                 const SizedBox(height: 10),
 
+                /// 🔷 SECONDARY ACTION
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -199,9 +222,26 @@ class _DoctorDashboardScreenState
                       ),
                     );
                   },
-                  child: const _SecondaryActionTile(
-                    icon: Icons.description,
-                    label: "Review Reports",
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: Colors.white.withOpacity(0.05),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.08),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.description,
+                            color: Colors.white70),
+                        SizedBox(width: 12),
+                        Text(
+                          "Review Reports",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -277,8 +317,7 @@ class _DoctorDashboardScreenState
   }
 }
 
-/// ================= WIDGETS =================
-
+/// 🔥 METRIC TILE (UPGRADED)
 class _MetricTile extends StatelessWidget {
   final IconData icon;
   final String value;
@@ -301,26 +340,38 @@ class _MetricTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+        ),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 8),
+
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+
+          const Spacer(),
+
           Text(
             value,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 4),
+
           Text(
             label,
-            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white54,
               fontSize: 11,
@@ -332,71 +383,7 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
-class _PrimaryActionTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _PrimaryActionTile({
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF00C2B2),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.black),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SecondaryActionTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _SecondaryActionTile({
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white70),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+/// 🔥 PATIENT TILE (CLEANED)
 class _PatientQueueTile extends StatelessWidget {
   final String token;
   final String name;
@@ -426,8 +413,11 @@ class _PatientQueueTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+        ),
       ),
       child: Row(
         children: [

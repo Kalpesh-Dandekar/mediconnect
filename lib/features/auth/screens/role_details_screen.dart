@@ -114,14 +114,12 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true,
+      backgroundColor: Colors.transparent,
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF0C1B2A), Color(0xFF16263A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
           ),
         ),
         child: SafeArea(
@@ -130,37 +128,59 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
+
+                const SizedBox(height: 10),
+
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back_ios_new,
                       color: Colors.white70),
                 ),
-                const SizedBox(height: 20),
+
+                const SizedBox(height: 10),
+
                 const Text(
                   "PROFILE DETAILS",
                   style: TextStyle(
                     fontSize: 13,
-                    letterSpacing: 2,
+                    letterSpacing: 2.5,
                     color: Colors.white54,
                   ),
                 ),
+
                 const SizedBox(height: 12),
+
                 Text(
                   "Complete Your ${widget.role} Profile",
                   style: const TextStyle(
-                    fontSize: 28,
+                    fontSize: 30,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 30),
+
+                const SizedBox(height: 24),
+
+                /// 🔥 FORM CARD
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: _buildRoleFields(),
+                  child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      color: Colors.white.withOpacity(0.05),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.08),
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      child: _buildRoleFields(),
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
+
+                /// 🚀 BUTTON
                 Center(
                   child: GestureDetector(
                     onTap: isLoading ? null : _finishRegistration,
@@ -168,29 +188,106 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
                       width: 260,
                       height: 56,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius: BorderRadius.circular(30),
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFFF9F1C), Color(0xFFFFB703)],
+                          colors: [
+                            Color(0xFFFF9F1C),
+                            Color(0xFFFFB703)
+                          ],
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF9F1C)
+                                .withOpacity(0.35),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
                       alignment: Alignment.center,
                       child: isLoading
                           ? const CircularProgressIndicator(
-                          color: Colors.black, strokeWidth: 2)
+                          color: Colors.black)
                           : const Text(
                         "FINISH REGISTRATION",
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Colors.black,
-                          letterSpacing: 1,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
+
+                const SizedBox(height: 20),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 🔥 INPUT
+  Widget _input(
+      TextEditingController controller, String hint, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          prefixIcon:
+          Icon(icon, color: Colors.white60, size: 20),
+          hintText: hint,
+          hintStyle:
+          const TextStyle(color: Colors.white38),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.06),
+          contentPadding:
+          const EdgeInsets.symmetric(vertical: 18),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 🔥 DROPDOWN
+  Widget _dropdown({
+    required String? value,
+    required String hint,
+    required List<String> items,
+    required Function(String?) onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: Colors.white.withOpacity(0.06),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            dropdownColor: const Color(0xFF16263A),
+            value: value,
+            hint: Text(
+              hint,
+              style: const TextStyle(color: Colors.white38),
+            ),
+            iconEnabledColor: Colors.white70,
+            style: const TextStyle(color: Colors.white),
+            isExpanded: true,
+            items: items
+                .map((e) => DropdownMenuItem(
+              value: e,
+              child: Text(e),
+            ))
+                .toList(),
+            onChanged: onChanged,
           ),
         ),
       ),
@@ -203,24 +300,20 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
         return Column(
           children: [
             _input(ageController, "Age", Icons.cake_outlined),
-            const SizedBox(height: 20),
             _dropdown(
               value: gender,
               hint: "Gender",
               items: ["Male", "Female", "Other"],
               onChanged: (val) => setState(() => gender = val),
             ),
-            const SizedBox(height: 20),
             _dropdown(
               value: bloodGroup,
               hint: "Blood Group",
               items: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
               onChanged: (val) => setState(() => bloodGroup = val),
             ),
-            const SizedBox(height: 20),
             _input(emergencyController, "Emergency Contact",
                 Icons.phone_outlined),
-            const SizedBox(height: 20),
             _input(cityController, "City", Icons.location_on_outlined),
           ],
         );
@@ -230,13 +323,10 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
           children: [
             _input(specializationController, "Specialization",
                 Icons.medical_services_outlined),
-            const SizedBox(height: 20),
             _input(experienceController, "Experience (Years)",
                 Icons.timelapse_outlined),
-            const SizedBox(height: 20),
             _input(licenseController, "License Number",
                 Icons.badge_outlined),
-            const SizedBox(height: 20),
             _input(doctorPhoneController, "Contact Number",
                 Icons.phone_outlined),
           ],
@@ -256,12 +346,11 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
                 "Spouse",
                 "Guardian"
               ],
-              onChanged: (val) => setState(() => relationType = val),
+              onChanged: (val) =>
+                  setState(() => relationType = val),
             ),
-            const SizedBox(height: 20),
             _input(relativeNameController, "Patient Name",
                 Icons.person_outline),
-            const SizedBox(height: 20),
             _input(relativePhoneController, "Patient Contact",
                 Icons.phone_outlined),
           ],
@@ -280,14 +369,13 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
                 "Admin",
                 "Pharmacist"
               ],
-              onChanged: (val) => setState(() => designation = val),
+              onChanged: (val) =>
+                  setState(() => designation = val),
             ),
-            const SizedBox(height: 20),
             _input(departmentController, "Department",
                 Icons.apartment_outlined),
-            const SizedBox(height: 20),
-            _input(staffIdController, "Staff ID", Icons.badge_outlined),
-            const SizedBox(height: 20),
+            _input(staffIdController, "Staff ID",
+                Icons.badge_outlined),
             _input(staffPhoneController, "Contact Number",
                 Icons.phone_outlined),
           ],
@@ -296,61 +384,5 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
       default:
         return const SizedBox();
     }
-  }
-
-  Widget _input(
-      TextEditingController controller, String hint, IconData icon) {
-    return TextField(
-      controller: controller,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.white60, size: 20),
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white38),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.06),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-
-  Widget _dropdown({
-    required String? value,
-    required String hint,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: Colors.white.withOpacity(0.06),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          dropdownColor: const Color(0xFF16263A),
-          value: value,
-          hint: Text(
-            hint,
-            style: const TextStyle(color: Colors.white38),
-          ),
-          iconEnabledColor: Colors.white70,
-          style: const TextStyle(color: Colors.white),
-          isExpanded: true,
-          items: items
-              .map(
-                (e) => DropdownMenuItem<String>(
-              value: e,
-              child: Text(e),
-            ),
-          )
-              .toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
   }
 }

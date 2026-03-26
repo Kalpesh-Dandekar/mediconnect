@@ -17,14 +17,10 @@ class ReportsScreen extends StatelessWidget {
           stream: reportService.getPatientReports(),
           builder: (context, snapshot) {
 
-            /// ✅ FIXED LOADING LOGIC
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
-            /// ✅ SHOW ERROR (if any)
             if (snapshot.hasError) {
               return Center(
                 child: Text(
@@ -34,12 +30,11 @@ class ReportsScreen extends StatelessWidget {
               );
             }
 
-            /// ✅ HANDLE EMPTY DATA
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return const Center(
                 child: Text(
                   "No reports found",
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white60),
                 ),
               );
             }
@@ -80,42 +75,25 @@ class ReportsScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  /// SUMMARY
+                  /// 🔥 SUMMARY (UPGRADED)
                   Row(
                     children: [
-                      Expanded(
-                        child: _SummaryCard(
-                          label: "Total",
-                          value: docs.length.toString(),
-                        ),
-                      ),
+                      Expanded(child: _SummaryCard("Total", docs.length.toString())),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: _SummaryCard(
-                          label: "Pending",
-                          value: pending.length.toString(),
-                        ),
-                      ),
+                      Expanded(child: _SummaryCard("Pending", pending.length.toString())),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: _SummaryCard(
-                          label: "Available",
-                          value: available.length.toString(),
-                        ),
-                      ),
+                      Expanded(child: _SummaryCard("Available", available.length.toString())),
                     ],
                   ),
 
                   const SizedBox(height: 30),
 
-                  /// PENDING REPORTS
+                  /// PENDING
                   const _SectionTitle("PENDING REPORTS"),
                   const SizedBox(height: 16),
 
                   ...pending.map((doc) {
-
                     final data = doc.data() as Map<String, dynamic>;
-
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 14),
                       child: _PendingReportCard(
@@ -130,14 +108,12 @@ class ReportsScreen extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  /// AVAILABLE REPORTS
+                  /// AVAILABLE
                   const _SectionTitle("AVAILABLE REPORTS"),
                   const SizedBox(height: 16),
 
                   ...available.map((doc) {
-
                     final data = doc.data() as Map<String, dynamic>;
-
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 14),
                       child: _AvailableReportCard(
@@ -162,7 +138,6 @@ class ReportsScreen extends StatelessWidget {
 
 class _SectionTitle extends StatelessWidget {
   final String title;
-
   const _SectionTitle(this.title);
 
   @override
@@ -178,25 +153,21 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+/// 🔥 SUMMARY CARD UPGRADED
 class _SummaryCard extends StatelessWidget {
   final String label;
   final String value;
 
-  const _SummaryCard({
-    required this.label,
-    required this.value,
-  });
+  const _SummaryCard(this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 18,
-        horizontal: 12,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
         borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         children: [
@@ -204,8 +175,8 @@ class _SummaryCard extends StatelessWidget {
             value,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 6),
@@ -222,7 +193,7 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-/// Pending report card
+/// 🔥 PENDING CARD UPGRADED
 class _PendingReportCard extends StatelessWidget {
 
   final String testName;
@@ -243,25 +214,22 @@ class _PendingReportCard extends StatelessWidget {
   Widget build(BuildContext context) {
 
     Color chipColor =
-    status == "Processing"
-        ? Colors.orangeAccent
-        : Colors.blueAccent;
+    status == "Processing" ? Colors.orangeAccent : Colors.blueAccent;
 
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF13273B),
         borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
           Row(
-            mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
               Expanded(
                 child: Text(
                   testName,
@@ -271,65 +239,27 @@ class _PendingReportCard extends StatelessWidget {
                   ),
                 ),
               ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: chipColor.withOpacity(0.15),
-                  borderRadius:
-                  BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: chipColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              _Chip(text: status, color: chipColor),
             ],
           ),
 
           const SizedBox(height: 10),
 
-          Text(
-            "Given On: $givenOn",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
-          ),
+          Text("Given On: $givenOn",
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
 
-          const SizedBox(height: 4),
+          Text("Expected: $expectedOn",
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
 
-          Text(
-            "Expected: $expectedOn",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            "Lab: $labName",
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 12,
-            ),
-          ),
+          Text("Lab: $labName",
+              style: const TextStyle(color: Colors.white54, fontSize: 12)),
         ],
       ),
     );
   }
 }
 
-/// Available report card
+/// 🔥 AVAILABLE CARD UPGRADED
 class _AvailableReportCard extends StatelessWidget {
 
   final String testName;
@@ -348,26 +278,22 @@ class _AvailableReportCard extends StatelessWidget {
   Widget build(BuildContext context) {
 
     Color indicatorColor =
-    resultStatus == "Normal"
-        ? Colors.greenAccent
-        : Colors.redAccent;
+    resultStatus == "Normal" ? Colors.greenAccent : Colors.redAccent;
 
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
         borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
           Row(
-            mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
               Expanded(
                 child: Text(
                   testName,
@@ -377,7 +303,6 @@ class _AvailableReportCard extends StatelessWidget {
                   ),
                 ),
               ),
-
               Container(
                 height: 8,
                 width: 8,
@@ -391,23 +316,11 @@ class _AvailableReportCard extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          Text(
-            "Uploaded: $uploadedOn",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
-          ),
+          Text("Uploaded: $uploadedOn",
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
 
-          const SizedBox(height: 4),
-
-          Text(
-            "Doctor: $doctor",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
-          ),
+          Text("Doctor: $doctor",
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
 
           const SizedBox(height: 6),
 
@@ -415,33 +328,61 @@ class _AvailableReportCard extends StatelessWidget {
             "Result: $resultStatus",
             style: TextStyle(
               color: indicatorColor,
-              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
+          /// 🔥 CTA BUTTON
           Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 10),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              borderRadius:
-              BorderRadius.circular(12),
-              color: const Color(0xFF1C3A52),
+              borderRadius: BorderRadius.circular(12),
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFFFF9F1C),
+                  Color(0xFFFFB703),
+                ],
+              ),
             ),
             child: const Text(
               "View Summary",
               style: TextStyle(
-                color: Colors.tealAccent,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+                color: Colors.black,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          )
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// CHIP
+class _Chip extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _Chip({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

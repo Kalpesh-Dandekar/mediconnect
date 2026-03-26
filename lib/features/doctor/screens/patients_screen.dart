@@ -10,15 +10,15 @@ class PatientsScreen extends StatefulWidget {
 }
 
 class _PatientsScreenState extends State<PatientsScreen> {
+
   final TextEditingController searchController = TextEditingController();
   String selectedFilter = "All";
 
   final PatientService patientService = PatientService();
 
-  static const Color accent = Color(0xFF00C2B2);
-
   @override
   Widget build(BuildContext context) {
+
     return Container(
       color: const Color(0xFF0C1B2A),
       child: SafeArea(
@@ -31,20 +31,22 @@ class _PatientsScreenState extends State<PatientsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+
                   const Text(
                     "Patients",
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
+
                   const SizedBox(height: 6),
 
-                  /// LIVE COUNT
                   StreamBuilder<List<Map<String, dynamic>>>(
                     stream: patientService.getPatients(),
                     builder: (context, snapshot) {
+
                       final count = snapshot.data?.length ?? 0;
 
                       return Text(
@@ -60,14 +62,17 @@ class _PatientsScreenState extends State<PatientsScreen> {
               ),
             ),
 
-            /// SEARCH
+            /// 🔥 SEARCH (FIXED STYLE)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
+                  color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.08),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -90,9 +95,9 @@ class _PatientsScreenState extends State<PatientsScreen> {
               ),
             ),
 
-            const SizedBox(height: 15),
+            const SizedBox(height: 14),
 
-            /// FILTER
+            /// 🔥 FILTER PILLS
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -104,37 +109,33 @@ class _PatientsScreenState extends State<PatientsScreen> {
               ),
             ),
 
-            const SizedBox(height: 15),
+            const SizedBox(height: 14),
 
-            /// PATIENT LIST
+            /// LIST
             Expanded(
               child: StreamBuilder<List<Map<String, dynamic>>>(
                 stream: patientService.getPatients(),
                 builder: (context, snapshot) {
 
                   if (!snapshot.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
+                    return const Center(child: CircularProgressIndicator());
                   }
 
                   final allPatients = snapshot.data!;
 
-                  /// SEARCH
-                  final searchedPatients = allPatients.where((p) {
+                  final searched = allPatients.where((p) {
                     final name = (p["name"] ?? "").toLowerCase();
                     final query = searchController.text.toLowerCase();
                     return name.contains(query);
                   }).toList();
 
-                  /// FILTER
-                  final filteredPatients = selectedFilter == "All"
-                      ? searchedPatients
-                      : searchedPatients
+                  final filtered = selectedFilter == "All"
+                      ? searched
+                      : searched
                       .where((p) => p["status"] == selectedFilter)
                       .toList();
 
-                  if (filteredPatients.isEmpty) {
+                  if (filtered.isEmpty) {
                     return const Center(
                       child: Text(
                         "No patients found",
@@ -145,20 +146,20 @@ class _PatientsScreenState extends State<PatientsScreen> {
 
                   return ListView.builder(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                    itemCount: filteredPatients.length,
+                    itemCount: filtered.length,
                     itemBuilder: (context, index) {
 
-                      final patient = filteredPatients[index];
+                      final p = filtered[index];
 
                       return _PatientCard(
-                        id: patient["id"] ?? "",
-                        name: patient["name"] ?? "",
-                        age: patient["age"].toString(),
-                        lastVisit: patient["lastVisit"] ?? "",
-                        diagnosis: patient["diagnosis"] ?? "",
-                        status: patient["status"] ?? "",
-                        visitedToday: patient["visitedToday"] ?? false,
-                        appointmentId: patient["appointmentId"] ?? "",
+                        id: p["id"] ?? "",
+                        name: p["name"] ?? "",
+                        age: p["age"].toString(),
+                        lastVisit: p["lastVisit"] ?? "",
+                        diagnosis: p["diagnosis"] ?? "",
+                        status: p["status"] ?? "",
+                        visitedToday: p["visitedToday"] ?? false,
+                        appointmentId: p["appointmentId"] ?? "",
                       );
                     },
                   );
@@ -171,26 +172,31 @@ class _PatientsScreenState extends State<PatientsScreen> {
     );
   }
 
+  /// FILTER
   Widget _buildFilter(String label) {
-    final bool active = selectedFilter == label;
+
+    final active = selectedFilter == label;
 
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => selectedFilter = label),
-        child: Container(
-          margin: const EdgeInsets.only(right: 8),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? accent.withOpacity(0.15) : Colors.transparent,
+            color: active
+                ? Colors.white.withOpacity(0.08)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: TextStyle(
-              color: active ? accent : Colors.white54,
+              color: active ? Colors.white : Colors.white54,
+              fontWeight:
+              active ? FontWeight.w600 : FontWeight.w400,
               fontSize: 12,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -199,9 +205,10 @@ class _PatientsScreenState extends State<PatientsScreen> {
   }
 }
 
-/// ================= PATIENT CARD =================
+/// ================= CARD =================
 
 class _PatientCard extends StatelessWidget {
+
   final String id;
   final String name;
   final String age;
@@ -222,33 +229,35 @@ class _PatientCard extends StatelessWidget {
     required this.appointmentId,
   });
 
-  static const Color accent = Color(0xFF00C2B2);
-
   @override
   Widget build(BuildContext context) {
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
+          /// HEADER
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: accent.withOpacity(0.2),
+                backgroundColor: const Color(0xFF00C2B2).withOpacity(0.2),
                 child: Text(
                   name.isNotEmpty ? name[0] : "?",
                   style: const TextStyle(
-                    color: accent,
+                    color: Color(0xFF00C2B2),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+
               const SizedBox(width: 12),
 
               Expanded(
@@ -268,21 +277,7 @@ class _PatientCard extends StatelessWidget {
                 ),
               ),
 
-              Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: const TextStyle(
-                    color: accent,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
+              _chip(status),
             ],
           ),
 
@@ -302,45 +297,71 @@ class _PatientCard extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accent,
-              ),
-              onPressed: () {
+          /// 🔥 BUTTON (MATCHED)
+          GestureDetector(
+            onTap: () {
 
-                if (appointmentId.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("No appointment linked")),
-                  );
-                  return;
-                }
-
-                /// 🔥 DEBUG (CHECK IN CONSOLE)
-                print("Opening Consultation with ID: $appointmentId");
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ConsultationScreen(
-                      patientId: id,
-                      patientName: name,
-                      appointmentId: appointmentId,
-                    ),
-                  ),
+              if (appointmentId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("No appointment linked")),
                 );
-              },
+                return;
+              }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ConsultationScreen(
+                    patientId: id,
+                    patientName: name,
+                    appointmentId: appointmentId,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFFFF9F1C),
+                    Color(0xFFFFB703),
+                  ],
+                ),
+              ),
+              alignment: Alignment.center,
               child: Text(
                 visitedToday
                     ? "Continue Consultation"
                     : "Start Consultation",
-                style: const TextStyle(color: Colors.black),
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _chip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF00C2B2).withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF00C2B2),
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

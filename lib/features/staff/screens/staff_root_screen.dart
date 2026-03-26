@@ -16,9 +16,8 @@ class StaffRootScreen extends StatefulWidget {
 class _StaffRootScreenState extends State<StaffRootScreen> {
   int _currentIndex = 0;
 
-  static const Color _accentColor = Color(0xFF2979FF);
+  static const Color _accentColor = Color(0xFF00C2B2);
 
-  /// 🔥 UPDATED SCREENS (REMOVED PATIENTS)
   final List<Widget> _screens = [
     const StaffDashboardScreen(),
     const StaffAppointmentsScreen(),
@@ -29,7 +28,7 @@ class _StaffRootScreenState extends State<StaffRootScreen> {
   final List<_NavItem> _items = const [
     _NavItem(Icons.dashboard_outlined, Icons.dashboard, "Home"),
     _NavItem(Icons.calendar_month_outlined, Icons.calendar_month, "Appointments"),
-    _NavItem(Icons.warning_amber_outlined, Icons.warning_amber, "Emergency"),
+    _NavItem(Icons.warning_amber_outlined, Icons.warning_amber, "Emergency", isEmergency: true),
     _NavItem(Icons.person_outline, Icons.person, "Profile"),
   ];
 
@@ -60,9 +59,9 @@ class _StaffRootScreenState extends State<StaffRootScreen> {
               border: Border.all(color: Colors.white.withOpacity(0.06)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.45),
-                  blurRadius: 25,
-                  offset: const Offset(0, 12),
+                  color: Colors.black.withOpacity(0.55),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
                 ),
               ],
             ),
@@ -82,29 +81,40 @@ class _StaffRootScreenState extends State<StaffRootScreen> {
 
   Widget _buildNavItem(_NavItem item, int index) {
     final selected = index == _currentIndex;
+    final isEmergency = item.isEmergency;
+
+    final activeColor =
+    isEmergency ? Colors.redAccent : _accentColor;
+
+    final inactiveColor =
+    isEmergency ? Colors.redAccent.withOpacity(0.7) : Colors.white54;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _currentIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        alignment: Alignment.center,
-        child: Container(
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: selected
-                ? _accentColor.withOpacity(0.15)
+                ? activeColor.withOpacity(0.15)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+
               Icon(
                 selected ? item.activeIcon : item.icon,
-                size: 22,
-                color: selected ? _accentColor : Colors.white54,
+                size: isEmergency ? 24 : 22,
+                color: selected ? activeColor : inactiveColor,
               ),
+
               const SizedBox(height: 4),
+
               Text(
                 item.label,
                 overflow: TextOverflow.ellipsis,
@@ -112,7 +122,7 @@ class _StaffRootScreenState extends State<StaffRootScreen> {
                   fontSize: 11,
                   fontWeight:
                   selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? _accentColor : Colors.white54,
+                  color: selected ? activeColor : inactiveColor,
                 ),
               ),
             ],
@@ -127,6 +137,12 @@ class _NavItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
+  final bool isEmergency;
 
-  const _NavItem(this.icon, this.activeIcon, this.label);
+  const _NavItem(
+      this.icon,
+      this.activeIcon,
+      this.label, {
+        this.isEmergency = false, // ✅ FIX HERE
+      });
 }

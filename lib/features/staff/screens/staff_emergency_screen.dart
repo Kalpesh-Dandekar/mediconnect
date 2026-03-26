@@ -17,150 +17,199 @@ class _StaffEmergencyScreenState extends State<StaffEmergencyScreen> {
   Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case "completed":
-        return Colors.green;
+        return Colors.greenAccent;
       case "pending":
-        return Colors.orange;
+        return Colors.orangeAccent;
       default:
-        return Colors.orange;
+        return Colors.orangeAccent;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0C1B2A),
-        elevation: 0,
-        title: const Text("Emergency Requests"),
-      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _service.getEmergencies(),
-        builder: (context, snapshot) {
-
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final docs = snapshot.data!.docs;
-
-          if (docs.isEmpty) {
-            return const Center(
-              child: Text(
-                "No emergencies",
-                style: TextStyle(color: Colors.white70),
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
-
-              final status =
-              (data["status"] ?? "pending").toString();
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF14283C),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-
-                    /// ICON
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.red,
-                      ),
+            /// 🔥 HEADER (CONSISTENT)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Emergency",
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "Handle urgent patient alerts",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-                    const SizedBox(width: 12),
+            /// LIST
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _service.getEmergencies(),
+                builder: (context, snapshot) {
 
-                    /// DETAILS
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                        children: [
+                  if (!snapshot.hasData) {
+                    return const Center(
+                        child: CircularProgressIndicator());
+                  }
 
-                          Text(
-                            data["type"] ?? "Emergency",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  final docs = snapshot.data!.docs;
+
+                  if (docs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        "No emergencies",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 110),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+
+                      final doc = docs[index];
+                      final data =
+                      doc.data() as Map<String, dynamic>;
+
+                      final status =
+                      (data["status"] ?? "pending").toString();
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          color: Colors.white.withOpacity(0.05),
+                          border: Border.all(
+                            color: Colors.redAccent.withOpacity(0.3),
                           ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
 
-                          const SizedBox(height: 4),
-
-                          Text(
-                            "Patient: ${data["patientId"]}",
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-
-                          if ((data["message"] ?? "").isNotEmpty)
-                            Text(
-                              data["message"],
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 11,
+                            /// 🚨 ICON BOX
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color:
+                                Colors.redAccent.withOpacity(0.15),
+                                borderRadius:
+                                BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.redAccent,
+                                size: 22,
                               ),
                             ),
-                        ],
-                      ),
-                    ),
 
-                    /// STATUS BUTTON
-                    GestureDetector(
-                      onTap: () {
-                        if (status == "completed") return;
+                            const SizedBox(width: 12),
 
-                        _service.updateEmergencyStatus(
-                          emergencyId: doc.id,
-                          status: "completed",
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color:
-                          getStatusColor(status).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
+                            /// DETAILS
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                                children: [
+
+                                  Text(
+                                    data["type"] ?? "Emergency",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 4),
+
+                                  Text(
+                                    "Patient: ${data["patientId"]}",
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+
+                                  if ((data["message"] ?? "")
+                                      .toString()
+                                      .isNotEmpty)
+                                    Padding(
+                                      padding:
+                                      const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        data["message"],
+                                        style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+
+                            /// STATUS CHIP
+                            GestureDetector(
+                              onTap: () {
+                                if (status == "completed") return;
+
+                                _service.updateEmergencyStatus(
+                                  emergencyId: doc.id,
+                                  status: "completed",
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: getStatusColor(status)
+                                      .withOpacity(0.15),
+                                  borderRadius:
+                                  BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  status,
+                                  style: TextStyle(
+                                    color: getStatusColor(status),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          status,
-                          style: TextStyle(
-                            color: getStatusColor(status),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

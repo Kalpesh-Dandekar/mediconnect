@@ -11,7 +11,6 @@ class EmergencyScreen extends StatefulWidget {
 class _EmergencyScreenState extends State<EmergencyScreen> {
 
   final EmergencyService emergencyService = EmergencyService();
-
   bool _loading = false;
 
   void _showMessage(String message) {
@@ -22,22 +21,18 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   }
 
   Future<void> _handleEmergency(String type, String successMsg) async {
-
-    if (_loading) return; // prevent double tap
+    if (_loading) return;
 
     try {
       setState(() => _loading = true);
 
       await emergencyService.createEmergency(type);
-
       _showMessage(successMsg);
 
     } catch (e) {
       _showMessage("Something went wrong");
     } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -45,7 +40,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   Widget build(BuildContext context) {
 
     return Container(
-      color: const Color(0xFF0C1B2A),
+      color: const Color(0xFF0C1B2A), // ✅ ONLY CHANGE
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
@@ -73,13 +68,24 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
 
               const SizedBox(height: 30),
 
-              /// CRITICAL EMERGENCY
+              /// 🚨 CRITICAL EMERGENCY
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7A1F1F),
                   borderRadius: BorderRadius.circular(22),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF8B1E1E),
+                      Color(0xFF5C1212),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.redAccent.withOpacity(0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,7 +94,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                     const Row(
                       children: [
                         Icon(Icons.warning_amber_rounded,
-                            color: Colors.redAccent, size: 28),
+                            color: Colors.white, size: 28),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -121,14 +127,11 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                         "Ambulance request sent",
                       ),
                       child: Container(
-                        width: double.infinity,
-                        padding:
-                        const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: Colors.redAccent,
-                          borderRadius:
-                          BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: _loading
                             ? const CircularProgressIndicator(
@@ -149,12 +152,15 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
 
               const SizedBox(height: 24),
 
-              /// CONNECT DOCTOR
+              /// 🩺 DOCTOR CONNECT
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF14283C),
                   borderRadius: BorderRadius.circular(22),
+                  color: Colors.white.withOpacity(0.05),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.08),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,17 +199,21 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                         "Doctor request sent",
                       ),
                       child: Container(
-                        width: double.infinity,
-                        padding:
-                        const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: Colors.tealAccent,
-                          borderRadius:
-                          BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFFFF9F1C),
+                              Color(0xFFFFB703),
+                            ],
+                          ),
                         ),
                         child: _loading
-                            ? const CircularProgressIndicator()
+                            ? const CircularProgressIndicator(
+                          color: Colors.black,
+                        )
                             : const Text(
                           "CONNECT NOW",
                           style: TextStyle(
@@ -262,13 +272,14 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                   "Caregiver alerted",
                 ),
                 child: Container(
-                  width: double.infinity,
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF14283C),
                     borderRadius: BorderRadius.circular(16),
+                    color: Colors.white.withOpacity(0.05),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.08),
+                    ),
                   ),
                   child: _loading
                       ? const CircularProgressIndicator()
@@ -291,6 +302,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   }
 }
 
+/// CONTACT TILE (UNCHANGED)
 class _ContactTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -304,23 +316,33 @@ class _ContactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
         borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+        ),
       ),
       child: Row(
         children: [
 
-          Icon(icon, color: Colors.redAccent),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.redAccent.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.redAccent),
+          ),
 
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,

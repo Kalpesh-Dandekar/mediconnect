@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../services/doctor/emergency_service.dart'; // ✅ UPDATED
+import '../../../services/doctor/emergency_service.dart';
 
 class DoctorEmergencyScreen extends StatelessWidget {
   const DoctorEmergencyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final DoctorEmergencyService emergencyService = DoctorEmergencyService(); // ✅ UPDATED
+    final DoctorEmergencyService emergencyService = DoctorEmergencyService();
 
     return Container(
       color: const Color(0xFF0C1B2A),
@@ -15,6 +15,7 @@ class DoctorEmergencyScreen extends StatelessWidget {
         child: StreamBuilder<QuerySnapshot>(
           stream: emergencyService.getActiveEmergencies(),
           builder: (context, snapshot) {
+
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -34,6 +35,7 @@ class DoctorEmergencyScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
               itemCount: docs.length,
               itemBuilder: (context, index) {
+
                 final doc = docs[index];
                 final data = doc.data() as Map<String, dynamic>;
 
@@ -48,14 +50,12 @@ class DoctorEmergencyScreen extends StatelessWidget {
                     assignedTo: data["assignedTo"] ?? "",
                     onAccept: () async {
                       await emergencyService.acceptEmergency(doc.id);
-
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Emergency Accepted")),
                       );
                     },
                     onComplete: () async {
                       await emergencyService.completeEmergency(doc.id);
-
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Marked Completed")),
                       );
@@ -126,6 +126,7 @@ class _EmergencyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     final color = _getColor();
 
     final bool isAccepted = status == "accepted";
@@ -134,8 +135,9 @@ class _EmergencyCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
         borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,22 +156,7 @@ class _EmergencyCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  type.toUpperCase(),
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              _chip(type.toUpperCase(), color),
             ],
           ),
 
@@ -189,31 +176,43 @@ class _EmergencyCard extends StatelessWidget {
 
           const SizedBox(height: 6),
 
-          Text(
-            "Status: $status",
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          _chip(
+            status.toUpperCase(),
+            isCompleted
+                ? Colors.greenAccent
+                : isAccepted
+                ? Colors.blueAccent
+                : Colors.orangeAccent,
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
-          /// BUTTONS
+          /// BUTTONS (MATCHED STYLE)
           if (!isAccepted && !isCompleted)
             GestureDetector(
               onTap: onAccept,
-              child: _button(color, "ACCEPT"),
+              child: _button(
+                const LinearGradient(
+                  colors: [Color(0xFFFF9F1C), Color(0xFFFFB703)],
+                ),
+                "Accept Emergency",
+              ),
             ),
 
           if (isAccepted && !isCompleted)
             GestureDetector(
               onTap: onComplete,
-              child: _button(Colors.greenAccent, "COMPLETE"),
+              child: _button(
+                const LinearGradient(
+                  colors: [Colors.greenAccent, Colors.green],
+                ),
+                "Mark Completed",
+              ),
             ),
 
           if (isCompleted)
-            Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: const Text(
+            const Center(
+              child: Text(
                 "COMPLETED",
                 style: TextStyle(
                   color: Colors.greenAccent,
@@ -226,20 +225,38 @@ class _EmergencyCard extends StatelessWidget {
     );
   }
 
-  Widget _button(Color color, String text) {
+  Widget _button(Gradient gradient, String text) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        gradient: gradient,
       ),
       child: Text(
         text,
         style: const TextStyle(
           color: Colors.black,
           fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

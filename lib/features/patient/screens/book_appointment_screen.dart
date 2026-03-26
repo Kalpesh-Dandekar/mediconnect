@@ -18,8 +18,6 @@ class _BookAppointmentScreenState
   String? selectedDepartment;
   DateTime? selectedDate;
   String? selectedSlot;
-
-  /// 🔥 NEW: selected doctorId
   String? selectedDoctorId;
 
   final List<String> departments = [
@@ -42,11 +40,10 @@ class _BookAppointmentScreenState
 
   bool get isValid =>
       selectedDepartment != null &&
-          selectedDoctorId != null && // 🔥 FIXED
+          selectedDoctorId != null &&
           selectedDate != null &&
           selectedSlot != null;
 
-  /// 🔥 FETCH DOCTOR BY NAME
   Future<void> _selectDoctor(String name) async {
 
     final query = await FirebaseFirestore.instance
@@ -57,17 +54,12 @@ class _BookAppointmentScreenState
         .get();
 
     if (query.docs.isEmpty) {
-
       selectedDoctorId = null;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Doctor not found")),
       );
-
     } else {
-
       final doc = query.docs.first;
-
       selectedDoctorId = doc.id;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,15 +72,19 @@ class _BookAppointmentScreenState
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
 
+      /// 🔥 FIXED APPBAR
       appBar: AppBar(
         backgroundColor: const Color(0xFF0C1B2A),
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           "Book Appointment",
           style: TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -101,16 +97,15 @@ class _BookAppointmentScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// ================= DEPARTMENT =================
+              /// 🔥 DEPARTMENT
               const _Label("Department"),
               const SizedBox(height: 12),
 
               Wrap(
-                spacing: 12,
-                runSpacing: 12,
+                spacing: 10,
+                runSpacing: 10,
                 children: departments.map((dept) {
-                  final selected =
-                      selectedDepartment == dept;
+                  final selected = selectedDepartment == dept;
 
                   return GestureDetector(
                     onTap: () {
@@ -118,19 +113,19 @@ class _BookAppointmentScreenState
                         selectedDepartment = dept;
                       });
                     },
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12),
+                          horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF14283C),
-                        borderRadius:
-                        BorderRadius.circular(14),
+                        color: selected
+                            ? Colors.tealAccent.withOpacity(0.15)
+                            : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: selected
                               ? Colors.tealAccent
-                              : Colors.white
-                              .withOpacity(0.05),
+                              : Colors.white.withOpacity(0.06),
                         ),
                       ),
                       child: Text(
@@ -148,7 +143,7 @@ class _BookAppointmentScreenState
 
               const SizedBox(height: 28),
 
-              /// ================= DOCTOR INPUT =================
+              /// 🔥 DOCTOR INPUT
               const _Label("Doctor"),
               const SizedBox(height: 12),
 
@@ -157,23 +152,19 @@ class _BookAppointmentScreenState
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: "Enter doctor's name",
-                  hintStyle:
-                  const TextStyle(color: Colors.white38),
+                  hintStyle: const TextStyle(color: Colors.white38),
                   filled: true,
-                  fillColor: const Color(0xFF14283C),
+                  fillColor: Colors.white.withOpacity(0.06),
+                  contentPadding:
+                  const EdgeInsets.symmetric(vertical: 18),
                   border: OutlineInputBorder(
-                    borderRadius:
-                    BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide.none,
                   ),
                   suffixIcon: IconButton(
-                    icon: const Icon(
-                      Icons.search,
-                      color: Colors.white38,
-                    ),
+                    icon: const Icon(Icons.search, color: Colors.white38),
                     onPressed: () {
-                      _selectDoctor(
-                          doctorController.text.trim());
+                      _selectDoctor(doctorController.text.trim());
                     },
                   ),
                 ),
@@ -181,18 +172,19 @@ class _BookAppointmentScreenState
 
               const SizedBox(height: 28),
 
-              /// ================= DATE =================
+              /// 🔥 DATE
               const _Label("Date"),
               const SizedBox(height: 12),
 
               SizedBox(
-                height: 70,
+                height: 80,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: next7Days.length,
                   separatorBuilder: (_, __) =>
                   const SizedBox(width: 12),
                   itemBuilder: (context, index) {
+
                     final date = next7Days[index];
                     final selected =
                         selectedDate?.day == date.day;
@@ -203,23 +195,22 @@ class _BookAppointmentScreenState
                           selectedDate = date;
                         });
                       },
-                      child: Container(
-                        width: 65,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 70,
                         decoration: BoxDecoration(
-                          color:
-                          const Color(0xFF14283C),
-                          borderRadius:
-                          BorderRadius.circular(14),
+                          color: selected
+                              ? Colors.tealAccent.withOpacity(0.15)
+                              : Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: selected
                                 ? Colors.tealAccent
-                                : Colors.white
-                                .withOpacity(0.05),
+                                : Colors.white.withOpacity(0.06),
                           ),
                         ),
                         child: Column(
-                          mainAxisAlignment:
-                          MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               "${date.day}",
@@ -227,8 +218,8 @@ class _BookAppointmentScreenState
                                 color: selected
                                     ? Colors.tealAccent
                                     : Colors.white,
-                                fontWeight:
-                                FontWeight.w600,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -249,16 +240,15 @@ class _BookAppointmentScreenState
 
               const SizedBox(height: 28),
 
-              /// ================= TIME =================
+              /// 🔥 TIME SLOT
               const _Label("Time Slot"),
               const SizedBox(height: 12),
 
               Wrap(
-                spacing: 12,
-                runSpacing: 12,
+                spacing: 10,
+                runSpacing: 10,
                 children: timeSlots.map((slot) {
-                  final selected =
-                      selectedSlot == slot;
+                  final selected = selectedSlot == slot;
 
                   return GestureDetector(
                     onTap: () {
@@ -266,20 +256,19 @@ class _BookAppointmentScreenState
                         selectedSlot = slot;
                       });
                     },
-                    child: Container(
-                      padding:
-                      const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF14283C),
-                        borderRadius:
-                        BorderRadius.circular(12),
+                        color: selected
+                            ? Colors.tealAccent.withOpacity(0.15)
+                            : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: selected
                               ? Colors.tealAccent
-                              : Colors.white
-                              .withOpacity(0.05),
+                              : Colors.white.withOpacity(0.06),
                         ),
                       ),
                       child: Text(
@@ -297,62 +286,51 @@ class _BookAppointmentScreenState
 
               const SizedBox(height: 40),
 
-              /// ================= CONFIRM =================
+              /// 🔥 CONFIRM BUTTON
               GestureDetector(
                 onTap: isValid
                     ? () async {
-                  try {
 
-                    await AppointmentService().bookAppointment(
-                      doctorName: doctorController.text.trim(),
-                      department: selectedDepartment!,
-                      date: selectedDate!,
-                      timeSlot: selectedSlot!,
-                    );
+                  await AppointmentService().bookAppointment(
+                    doctorName: doctorController.text.trim(),
+                    department: selectedDepartment!,
+                    date: selectedDate!,
+                    timeSlot: selectedSlot!,
+                  );
 
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(
-                      const SnackBar(
-                        content:
-                        Text("Appointment Confirmed"),
-                      ),
-                    );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Appointment Confirmed"),
+                    ),
+                  );
 
-                    Navigator.pop(context);
-
-                  } catch (e) {
-
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(
-                      SnackBar(
-                        content: Text(e.toString()),
-                      ),
-                    );
-
-                  }
+                  Navigator.pop(context);
                 }
                     : null,
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
                   width: double.infinity,
-                  padding:
-                  const EdgeInsets.symmetric(
-                      vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: isValid
-                        ? Colors.tealAccent
-                        : Colors.tealAccent
-                        .withOpacity(0.3),
-                    borderRadius:
-                    BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: isValid
+                        ? const LinearGradient(
+                      colors: [
+                        Color(0xFFFF9F1C),
+                        Color(0xFFFFB703),
+                      ],
+                    )
+                        : null,
+                    color: !isValid
+                        ? Colors.white.withOpacity(0.08)
+                        : null,
                   ),
-                  child: const Center(
-                    child: Text(
-                      "Confirm Appointment",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight:
-                        FontWeight.w600,
-                      ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    "Confirm Appointment",
+                    style: TextStyle(
+                      color: isValid ? Colors.black : Colors.white54,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

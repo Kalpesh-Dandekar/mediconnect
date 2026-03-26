@@ -33,40 +33,80 @@ class _StaffAppointmentsScreenState extends State<StaffAppointmentsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _service.getAppointments(),
-        builder: (context, snapshot) {
 
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
-          final docs = snapshot.data!.docs;
+            /// 🔥 HEADER ADDED
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Appointments",
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "Manage and update appointments",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
+            /// LIST
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _service.getAppointments(),
+                builder: (context, snapshot) {
 
-              final data = docs[index].data() as Map<String, dynamic>;
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-              final appointment = {
-                "id": docs[index].id,
-                "patientId": (data["patientId"] ?? "").toString(),
-                "name": (data["patientName"] ?? "Unknown").toString(),
-                "doctor": (data["doctorName"] ?? "").toString(),
-                "dept": (data["department"] ?? "").toString(),
-                "time": (data["time"] ?? "--").toString(),
-                "status": normalizeStatus((data["status"] ?? "Waiting").toString()),
-              };
+                  final docs = snapshot.data!.docs;
 
-              return _AppointmentCard(
-                appointment: appointment,
-                service: _service,
-              );
-            },
-          );
-        },
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 110),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+
+                      final data =
+                      docs[index].data() as Map<String, dynamic>;
+
+                      final appointment = {
+                        "id": docs[index].id,
+                        "patientId": (data["patientId"] ?? "").toString(),
+                        "name": (data["patientName"] ?? "Unknown").toString(),
+                        "doctor": (data["doctorName"] ?? "").toString(),
+                        "dept": (data["department"] ?? "").toString(),
+                        "time": (data["time"] ?? "--").toString(),
+                        "status": normalizeStatus(
+                            (data["status"] ?? "Waiting").toString()),
+                      };
+
+                      return _AppointmentCard(
+                        appointment: appointment,
+                        service: _service,
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -112,11 +152,11 @@ class _AppointmentCardState extends State<_AppointmentCard> {
   Color getColor() {
     switch (status) {
       case "Completed":
-        return Colors.green;
+        return Colors.greenAccent;
       case "Cancelled":
-        return Colors.red;
+        return Colors.redAccent;
       default:
-        return Colors.orange;
+        return Colors.orangeAccent;
     }
   }
 
@@ -127,68 +167,119 @@ class _AppointmentCardState extends State<_AppointmentCard> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+        ),
       ),
       child: Row(
         children: [
 
-          Text(
-            widget.appointment["time"],
-            style: const TextStyle(color: Colors.white70),
+          /// TIME
+          Container(
+            padding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              widget.appointment["time"],
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
           ),
 
           const SizedBox(width: 12),
 
+          /// INFO
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.appointment["name"],
-                    style: const TextStyle(color: Colors.white)),
-                Text(widget.appointment["doctor"],
-                    style: const TextStyle(color: Colors.white54)),
+
+                Text(
+                  widget.appointment["name"],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  widget.appointment["doctor"],
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
 
+          /// ACTIONS
           Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
 
               GestureDetector(
                 onTap: cycleStatus,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: getColor().withOpacity(0.2),
+                    color: getColor().withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     status,
-                    style: TextStyle(color: getColor()),
+                    style: TextStyle(
+                      color: getColor(),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
 
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context, rootNavigator: true).push(
-                    MaterialPageRoute(
-                      builder: (_) => StaffReportsScreen(
-                        patientId: widget.appointment["patientId"],
-                        patientName: widget.appointment["name"],
-                      ),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.tealAccent,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF9F1C), Color(0xFFFFB703)],
+                  ),
                 ),
-                child: const Text("Upload", style: TextStyle(fontSize: 11)),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(
+                        builder: (_) => StaffReportsScreen(
+                          patientId:
+                          widget.appointment["patientId"],
+                          patientName:
+                          widget.appointment["name"],
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "Upload",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
               ),
             ],
           )

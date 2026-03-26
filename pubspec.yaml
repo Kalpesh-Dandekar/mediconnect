@@ -30,6 +30,9 @@ dependencies:
   timezone: ^0.10.1
   shared_preferences: ^2.5.3
 
+  # 🔥 NEW: Google Sign-In (ADDED ONLY)
+  google_sign_in: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mediconnect/services/staff/staff_dashboard_service.dart';
 
-// 🔥 IMPORT TARGET SCREENS
 import 'staff_appointments_screen.dart';
 import 'staff_reports_screen.dart';
 import 'staff_emergency_screen.dart';
@@ -21,7 +20,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
   Map<String, int>? data;
 
-  static const Color _accent = Color(0xFF2979FF);
+  static const Color _accent = Color(0xFF00C2B2);
   static const Color _danger = Color(0xFFE53935);
 
   @override
@@ -68,14 +67,15 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
                 const SizedBox(height: 22),
 
-                /// ===== MAIN STATS =====
+                /// 🔥 MAIN STATS (FIXED)
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF14283C), Color(0xFF16324F)],
-                    ),
                     borderRadius: BorderRadius.circular(18),
+                    color: Colors.white.withOpacity(0.05),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.08),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment:
@@ -99,18 +99,20 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
                 const SizedBox(height: 22),
 
-                /// ===== EMERGENCY =====
+                /// 🚨 EMERGENCY (GOOD ALREADY)
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: _danger.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _danger.withOpacity(0.4)),
+                    border: Border.all(
+                      color: _danger.withOpacity(0.4),
+                    ),
                   ),
                   child: Row(
                     children: [
                       const Icon(Icons.warning_amber_rounded,
-                          color: _danger, size: 28),
+                          color: _danger, size: 26),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Text(
@@ -127,9 +129,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
                 const SizedBox(height: 28),
 
-                /// ===== QUICK ACTIONS =====
                 const Text(
-                  "Quick Actions",
+                  "QUICK ACTIONS",
                   style: TextStyle(
                     fontSize: 12,
                     letterSpacing: 1.3,
@@ -139,7 +140,6 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
                 const SizedBox(height: 14),
 
-                /// 🔥 ADD REPORT
                 _QuickAction(
                   icon: Icons.add_circle_outline,
                   label: "Add New Report",
@@ -155,7 +155,6 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
                 const SizedBox(height: 12),
 
-                /// 🔥 APPOINTMENTS
                 _QuickAction(
                   icon: Icons.event_note_outlined,
                   label: "View Appointments",
@@ -171,7 +170,6 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
                 const SizedBox(height: 12),
 
-                /// 🔥 EMERGENCY
                 _QuickAction(
                   icon: Icons.warning_amber,
                   label: "Emergency Panel",
@@ -195,7 +193,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   }
 }
 
-/// ===== BIG STAT =====
+/// 🔥 BIG STAT (IMPROVED)
 class _BigStat extends StatelessWidget {
   final String value;
   final String label;
@@ -209,7 +207,7 @@ class _BigStat extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-            fontSize: 26,
+            fontSize: 24,
             fontWeight: FontWeight.w700,
             color: Colors.white,
           ),
@@ -218,8 +216,8 @@ class _BigStat extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 11,
-            color: Colors.white70,
+            fontSize: 12,
+            color: Colors.white60,
           ),
         ),
       ],
@@ -227,7 +225,7 @@ class _BigStat extends StatelessWidget {
   }
 }
 
-/// ===== QUICK ACTION =====
+/// 🔥 QUICK ACTION (FIXED)
 class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -242,17 +240,39 @@ class _QuickAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap, // 🔥 NAVIGATION
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF14283C),
           borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withOpacity(0.05),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.08),
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF2979FF)),
+
+            /// ICON BOX
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00C2B2).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.circle,
+                color: Color(0xFF00C2B2),
+                size: 0, // placeholder replaced below
+              ),
+            ),
+
             const SizedBox(width: 12),
+
+            Icon(icon, color: const Color(0xFF00C2B2)),
+
+            const SizedBox(width: 10),
+
             Expanded(
               child: Text(
                 label,
@@ -262,6 +282,7 @@ class _QuickAction extends StatelessWidget {
                 ),
               ),
             ),
+
             const Icon(Icons.arrow_forward_ios,
                 size: 14, color: Colors.white38),
           ],

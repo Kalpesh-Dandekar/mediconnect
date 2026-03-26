@@ -170,12 +170,15 @@ class _RelativeMedicationsScreenState
 
               const SizedBox(height: 28),
 
-              /// ADHERENCE
+              /// 🔥 ADHERENCE (FIXED STYLE)
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF14283C),
                   borderRadius: BorderRadius.circular(18),
+                  color: Colors.white.withOpacity(0.05),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.08),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,12 +188,16 @@ class _RelativeMedicationsScreenState
                       mainAxisAlignment:
                       MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Adherence Today",
-                            style: TextStyle(color: Colors.white)),
+                        const Text(
+                          "Adherence Today",
+                          style: TextStyle(color: Colors.white),
+                        ),
                         Text(
                           "${(_adherence * 100).toInt()}%",
                           style: const TextStyle(
-                              color: Colors.tealAccent),
+                            color: Colors.tealAccent,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -208,7 +215,10 @@ class _RelativeMedicationsScreenState
 
                     Text(
                       "$_takenDoses of $_totalDoses doses completed • Next: $_nextDose",
-                      style: const TextStyle(color: Colors.white60),
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -226,8 +236,10 @@ class _RelativeMedicationsScreenState
     _groupedDoses.forEach((period, doses) {
 
       widgets.add(
-        Text(period.toUpperCase(),
-            style: const TextStyle(color: Colors.white54)),
+        Text(
+          period.toUpperCase(),
+          style: const TextStyle(color: Colors.white54),
+        ),
       );
 
       widgets.add(const SizedBox(height: 10));
@@ -238,14 +250,14 @@ class _RelativeMedicationsScreenState
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF14283C),
               borderRadius: BorderRadius.circular(16),
+              color: Colors.white.withOpacity(0.05),
               border: Border.all(color: dose.borderColor),
             ),
             child: Row(
               children: [
 
-                Icon(dose.icon, color: dose.iconColor),
+                Icon(dose.icon, color: dose.iconColor, size: 22),
 
                 const SizedBox(width: 14),
 
@@ -254,13 +266,19 @@ class _RelativeMedicationsScreenState
                     crossAxisAlignment:
                     CrossAxisAlignment.start,
                     children: [
-                      Text(dose.name,
-                          style: const TextStyle(
-                              color: Colors.white)),
+                      Text(
+                        dose.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       Text(
                         dose.time.isEmpty ? "--" : dose.time,
                         style: const TextStyle(
-                            color: Colors.white60),
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -278,7 +296,7 @@ class _RelativeMedicationsScreenState
   }
 }
 
-/// MODEL
+/// MODEL + CHIP SAME (unchanged)
 class Dose {
   final String id;
   final String name;
@@ -326,7 +344,6 @@ class Dose {
   }
 }
 
-/// STATUS CHIP
 class _StatusChip extends StatelessWidget {
   final DoseStatus status;
 

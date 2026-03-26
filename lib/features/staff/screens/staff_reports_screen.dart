@@ -33,7 +33,6 @@ class _StaffReportsScreenState extends State<StaffReportsScreen> {
   void initState() {
     super.initState();
 
-    /// 🔥 AUTO FILL PATIENT ID
     if (widget.patientId != null) {
       _patientIdController.text = widget.patientId!;
     }
@@ -62,11 +61,13 @@ class _StaffReportsScreenState extends State<StaffReportsScreen> {
   InputDecoration _inputStyle(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: const TextStyle(color: Colors.white60),
       filled: true,
-      fillColor: const Color(0xFF14283C),
+      fillColor: Colors.white.withOpacity(0.05),
+      contentPadding:
+      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
       ),
     );
@@ -74,66 +75,117 @@ class _StaffReportsScreenState extends State<StaffReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0C1B2A),
-        elevation: 0,
-        title: Text(widget.patientName ?? "Upload Report"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
 
-            TextField(
-              controller: _patientIdController,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputStyle("Patient ID"),
-            ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-            const SizedBox(height: 12),
+              /// 🔥 HEADER WITH BACK BUTTON
+              Row(
+                children: [
 
-            TextField(
-              controller: _testController,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputStyle("Test Name"),
-            ),
+                  /// BACK
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
 
-            const SizedBox(height: 12),
+                  const SizedBox(width: 12),
 
-            TextField(
-              controller: _labController,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputStyle("Lab Name"),
-            ),
-
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _summaryController,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputStyle("Result Summary"),
-              maxLines: 3,
-            ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _uploadReport,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.tealAccent,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text("Upload Report"),
+                  /// TITLE
+                  Expanded(
+                    child: Text(
+                      widget.patientName ?? "Upload Report",
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+
+              const SizedBox(height: 6),
+
+              const Text(
+                "Enter report details",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white54,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              /// INPUTS
+              _inputField(_patientIdController, "Patient ID"),
+              const SizedBox(height: 12),
+
+              _inputField(_testController, "Test Name"),
+              const SizedBox(height: 12),
+
+              _inputField(_labController, "Lab Name"),
+              const SizedBox(height: 12),
+
+              _inputField(_summaryController, "Result Summary",
+                  maxLines: 3),
+
+              const SizedBox(height: 24),
+
+              /// BUTTON
+              GestureDetector(
+                onTap: _uploadReport,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF9F1C), Color(0xFFFFB703)],
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    "Upload Report",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _inputField(TextEditingController controller, String label,
+      {int maxLines = 1}) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white),
+      decoration: _inputStyle(label),
     );
   }
 }

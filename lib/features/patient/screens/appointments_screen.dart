@@ -20,7 +20,7 @@ class AppointmentsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// ===== HEADER =====
+              /// 🔥 HEADER
               const Text(
                 "Appointments",
                 style: TextStyle(
@@ -29,7 +29,9 @@ class AppointmentsScreen extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
+
               const SizedBox(height: 4),
+
               Text(
                 "Consultation history & scheduling",
                 style: TextStyle(
@@ -40,9 +42,7 @@ class AppointmentsScreen extends StatelessWidget {
 
               const SizedBox(height: 28),
 
-              /// ========================
-              /// BOOK APPOINTMENT
-              /// ========================
+              /// 🔥 BOOK CARD (UPGRADED)
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -55,23 +55,30 @@ class AppointmentsScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF1C3A52),
-                        Color(0xFF14283C),
-                      ],
-                    ),
                     borderRadius: BorderRadius.circular(20),
+                    color: Colors.white.withOpacity(0.05),
                     border: Border.all(
-                      color: Colors.tealAccent.withOpacity(0.4),
+                      color: Colors.white.withOpacity(0.08),
                     ),
                   ),
                   child: Row(
-                    children: const [
-                      Icon(Icons.add_circle_outline,
-                          color: Colors.tealAccent),
-                      SizedBox(width: 14),
-                      Expanded(
+                    children: [
+
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFB703).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Color(0xFFFFB703),
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      const Expanded(
                         child: Text(
                           "Book New Appointment",
                           style: TextStyle(
@@ -80,8 +87,12 @@ class AppointmentsScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios,
-                          color: Colors.white38, size: 16),
+
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white38,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
@@ -89,9 +100,7 @@ class AppointmentsScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              /// ========================
-              /// UPCOMING APPOINTMENTS
-              /// ========================
+              /// 🔷 SECTION TITLE
               const Text(
                 "UPCOMING",
                 style: TextStyle(
@@ -103,22 +112,24 @@ class AppointmentsScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
+              /// 🔥 LIST
               StreamBuilder<QuerySnapshot>(
                 stream: appointmentService.getPatientAppointments(),
                 builder: (context, snapshot) {
 
-                  /// Loading state
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
 
-                  /// No data
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Text(
-                      "No appointments yet",
-                      style: TextStyle(color: Colors.white60),
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 20),
+                      child: Text(
+                        "No appointments yet",
+                        style: TextStyle(color: Colors.white60),
+                      ),
                     );
                   }
 
@@ -134,7 +145,6 @@ class AppointmentsScreen extends StatelessWidget {
                       final time = data["timeSlot"] ?? "";
                       final status = (data["status"] ?? "pending").toString();
 
-                      /// Convert Firestore Timestamp → Date
                       final Timestamp timestamp = data["date"];
                       final DateTime dateTime = timestamp.toDate();
                       final date =
@@ -144,25 +154,29 @@ class AppointmentsScreen extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF13273B),
                           borderRadius: BorderRadius.circular(20),
+                          color: Colors.white.withOpacity(0.05),
                           border: Border.all(
-                            color: Colors.tealAccent.withOpacity(0.2),
+                            color: Colors.white.withOpacity(0.08),
                           ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
 
+                            /// 🔷 TOP ROW
                             Row(
                               mainAxisAlignment:
                               MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  doctor,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: Text(
+                                    doctor,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                 ),
                                 _StatusChip(status: status),
@@ -179,12 +193,16 @@ class AppointmentsScreen extends StatelessWidget {
                               ),
                             ),
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 14),
 
+                            /// 🔷 DATE ROW
                             Row(
                               children: [
-                                const Icon(Icons.calendar_month,
-                                    color: Colors.tealAccent, size: 16),
+                                const Icon(
+                                  Icons.calendar_month,
+                                  color: Colors.tealAccent,
+                                  size: 16,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   "$date • $time",
@@ -211,9 +229,7 @@ class AppointmentsScreen extends StatelessWidget {
   }
 }
 
-/// ========================
-/// STATUS CHIP
-/// ========================
+/// 🔥 STATUS CHIP
 class _StatusChip extends StatelessWidget {
   final String status;
 
@@ -232,7 +248,7 @@ class _StatusChip extends StatelessWidget {
         color = Colors.blueAccent;
         break;
       case "pending":
-        color = Colors.orangeAccent;
+        color = const Color(0xFFFFB703);
         break;
       default:
         color = Colors.redAccent;
@@ -240,17 +256,18 @@ class _StatusChip extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: 10, vertical: 4),
+          horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        status,
+        status.toUpperCase(),
         style: TextStyle(
           color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
         ),
       ),
     );

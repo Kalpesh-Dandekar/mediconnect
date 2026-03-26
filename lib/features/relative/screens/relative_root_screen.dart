@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import 'relative_dashboard_screen.dart';
 import 'relative_medications_screen.dart';
 import 'relative_reports_screen.dart';
@@ -17,7 +19,7 @@ class _RelativeRootScreenState
 
   int _currentIndex = 0;
 
-  static const Color _accent = Color(0xFF8E44AD);
+  static const Color _accent = Color(0xFF00C2B2);
 
   final List<Widget> _screens = const [
     RelativeDashboardScreen(),
@@ -35,12 +37,21 @@ class _RelativeRootScreenState
 
   @override
   Widget build(BuildContext context) {
+
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Color(0xFF0C1B2A),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
+
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -50,48 +61,73 @@ class _RelativeRootScreenState
             decoration: BoxDecoration(
               color: const Color(0xFF1E3148),
               borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.06),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.55),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                ),
+              ],
             ),
             child: Row(
               children: List.generate(
                 _items.length,
                     (index) => Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(
-                            () => _currentIndex = index),
-                    child: Column(
-                      mainAxisAlignment:
-                      MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          index == _currentIndex
-                              ? _items[index].activeIcon
-                              : _items[index].icon,
-                          size: 22,
-                          color: index == _currentIndex
-                              ? _accent
-                              : Colors.white54,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _items[index].label,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight:
-                            index == _currentIndex
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: index ==
-                                _currentIndex
-                                ? _accent
-                                : Colors.white54,
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
+                  child: _buildNavItem(_items[index], index),
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(_NavItem item, int index) {
+    final selected = index == _currentIndex;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _currentIndex = index),
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected
+                ? _accent.withOpacity(0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              /// ICON
+              Icon(
+                selected ? item.activeIcon : item.icon,
+                size: 22,
+                color: selected ? _accent : Colors.white54,
+              ),
+
+              const SizedBox(height: 4),
+
+              /// LABEL
+              Text(
+                item.label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight:
+                  selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? _accent : Colors.white54,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -104,6 +140,5 @@ class _NavItem {
   final IconData activeIcon;
   final String label;
 
-  const _NavItem(
-      this.icon, this.activeIcon, this.label);
+  const _NavItem(this.icon, this.activeIcon, this.label);
 }

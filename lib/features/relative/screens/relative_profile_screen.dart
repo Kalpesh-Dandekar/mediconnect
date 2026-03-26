@@ -17,7 +17,7 @@ class _RelativeProfileScreenState
   final RelativeProfileService _profileService =
   RelativeProfileService();
 
-  static const Color _accent = Color(0xFF8E44AD);
+  static const Color _accent = Color(0xFF00C2B2);
 
   bool loading = true;
   bool isEditing = false;
@@ -35,24 +35,20 @@ class _RelativeProfileScreenState
     _init();
   }
 
-  /// 🔥 INIT (PROFILE + FCM TOKEN)
   Future<void> _init() async {
     await _loadProfile();
     await _saveFCMToken();
   }
 
-  /// 🔥 SAVE FCM TOKEN
   Future<void> _saveFCMToken() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
       final token = await FirebaseMessaging.instance.getToken();
-
       if (token == null) return;
 
       await FirebaseMessaging.instance.requestPermission();
-
       await FirebaseMessaging.instance.subscribeToTopic("all");
 
       await _profileService.saveFCMToken(
@@ -60,10 +56,8 @@ class _RelativeProfileScreenState
         token: token,
       );
 
-      print("✅ FCM TOKEN SAVED: $token");
-
     } catch (e) {
-      print("❌ FCM ERROR: $e");
+      print("FCM ERROR: $e");
     }
   }
 
@@ -125,6 +119,7 @@ class _RelativeProfileScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
+              /// HEADER
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -139,7 +134,7 @@ class _RelativeProfileScreenState
                   IconButton(
                     icon: Icon(
                       isEditing ? Icons.check : Icons.edit,
-                      color: Colors.tealAccent,
+                      color: _accent,
                     ),
                     onPressed: () async {
                       if (isEditing) {
@@ -152,47 +147,63 @@ class _RelativeProfileScreenState
                 ],
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
 
-              Center(
-                child: Column(
+              /// 🔥 PROFILE CARD
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  color: Colors.white.withOpacity(0.05),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.08),
+                  ),
+                ),
+                child: Row(
                   children: [
+
                     CircleAvatar(
-                      radius: 42,
+                      radius: 28,
                       backgroundColor: _accent.withOpacity(0.2),
                       child: Text(
                         initials,
                         style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: _accent,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _nameController.text,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      email,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                      ),
-                    ),
+
+                    const SizedBox(width: 14),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _nameController.text,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          email,
+                          style: const TextStyle(
+                            color: Colors.white54,
+                          ),
+                        ),
+                      ],
+                    )
                   ],
                 ),
               ),
 
-              const SizedBox(height: 35),
+              const SizedBox(height: 28),
 
+              /// SECTION
               _sectionTitle("Account Information"),
-
-              const SizedBox(height: 14),
 
               _editableTile("Name", _nameController),
               _editableTile("Phone", _phoneController),
@@ -201,24 +212,29 @@ class _RelativeProfileScreenState
 
               const SizedBox(height: 40),
 
-              GestureDetector(
-                onTap: () async {
-                  await FirebaseAuth.instance.signOut();
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFB00020), Color(0xFFD32F2F)],
+              /// LOGOUT
+              Center(
+                child: GestureDetector(
+                  onTap: () async {
+                    await FirebaseAuth.instance.signOut();
+                    Navigator.of(context).popUntil((r) => r.isFirst);
+                  },
+                  child: Container(
+                    width: 220,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: Colors.redAccent),
+                      color: Colors.redAccent.withOpacity(0.1),
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    "Logout",
-                    style: TextStyle(color: Colors.white),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      "Logout",
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -229,13 +245,15 @@ class _RelativeProfileScreenState
     );
   }
 
+  /// EDITABLE TILE
   Widget _editableTile(String label, TextEditingController controller) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
       child: TextField(
         controller: controller,
@@ -243,25 +261,27 @@ class _RelativeProfileScreenState
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white70),
+          labelStyle: const TextStyle(color: Colors.white60),
           border: InputBorder.none,
         ),
       ),
     );
   }
 
+  /// INFO TILE
   Widget _infoTile(String label, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white70)),
+          Text(label, style: const TextStyle(color: Colors.white60)),
           Text(value, style: const TextStyle(color: Colors.white)),
         ],
       ),
@@ -269,11 +289,14 @@ class _RelativeProfileScreenState
   }
 
   Widget _sectionTitle(String text) {
-    return Text(
-      text.toUpperCase(),
-      style: TextStyle(
-        color: Colors.white.withOpacity(0.6),
-        fontSize: 12,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.white54,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }

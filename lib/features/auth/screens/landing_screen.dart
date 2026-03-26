@@ -39,17 +39,18 @@ class LandingScreen extends StatelessWidget {
           child: Stack(
             children: [
 
+              /// 🔥 TOP GLOW
               Positioned(
-                top: 100,
-                right: -100,
+                top: 60,
+                right: -80,
                 child: Container(
-                  width: 380,
-                  height: 380,
+                  width: 320,
+                  height: 320,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFFFF9F1C).withOpacity(0.10),
+                        const Color(0xFFFF9F1C).withOpacity(0.18),
                         Colors.transparent,
                       ],
                     ),
@@ -57,17 +58,18 @@ class LandingScreen extends StatelessWidget {
                 ),
               ),
 
+              /// 🔥 BOTTOM GLOW
               Positioned(
-                bottom: -50,
-                left: -80,
+                bottom: -80,
+                left: -60,
                 child: Container(
-                  width: 300,
-                  height: 300,
+                  width: 280,
+                  height: 280,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        Colors.white.withOpacity(0.05),
+                        Colors.white.withOpacity(0.06),
                         Colors.transparent,
                       ],
                     ),
@@ -76,13 +78,14 @@ class LandingScreen extends StatelessWidget {
               ),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 36),
 
+                    /// 🔷 LOGO
                     const Text.rich(
                       TextSpan(
                         children: [
@@ -91,7 +94,7 @@ class LandingScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w600,
-                              letterSpacing: 1.2,
+                              letterSpacing: 1.1,
                               color: Colors.white,
                             ),
                           ),
@@ -100,7 +103,7 @@ class LandingScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w600,
-                              letterSpacing: 1.2,
+                              letterSpacing: 1.1,
                               color: Color(0xFFFF9F1C),
                             ),
                           ),
@@ -110,24 +113,26 @@ class LandingScreen extends StatelessWidget {
 
                     const Spacer(),
 
+                    /// 🔷 SUB LABEL
                     const Text(
                       "NEXT GENERATION",
                       style: TextStyle(
-                        fontSize: 14,
-                        letterSpacing: 2,
+                        fontSize: 13,
+                        letterSpacing: 2.5,
                         color: Colors.white54,
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
+                    /// 🔥 HERO TEXT
                     const Text.rich(
                       TextSpan(
                         children: [
                           TextSpan(
                             text: "Digital ",
                             style: TextStyle(
-                              fontSize: 42,
+                              fontSize: 44,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                               height: 1.1,
@@ -136,7 +141,7 @@ class LandingScreen extends StatelessWidget {
                           TextSpan(
                             text: "Healthcare",
                             style: TextStyle(
-                              fontSize: 42,
+                              fontSize: 44,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFFFF9F1C),
                               height: 1.1,
@@ -146,22 +151,21 @@ class LandingScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-                    const SizedBox(
-                      width: 320,
-                      child: Text(
-                        "Appointments. Records. Reminders.\nAll unified in one intelligent platform.",
-                        style: TextStyle(
-                          fontSize: 16,
-                          height: 1.6,
-                          color: Colors.white70,
-                        ),
+                    /// 🔷 DESCRIPTION
+                    const Text(
+                      "Appointments. Records. Reminders.\nAll unified in one intelligent platform.",
+                      style: TextStyle(
+                        fontSize: 16,
+                        height: 1.7,
+                        color: Colors.white70,
                       ),
                     ),
 
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 36),
 
+                    /// 🔥 FEATURE CARDS
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -182,6 +186,7 @@ class LandingScreen extends StatelessWidget {
 
                     const SizedBox(height: 60),
 
+                    /// 🚀 CTA BUTTON
                     Center(
                       child: GestureDetector(
                         onTap: () => _navigateToRole(context),
@@ -198,10 +203,15 @@ class LandingScreen extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.4),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              )
+                                color: const Color(0xFFFF9F1C).withOpacity(0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.5),
+                                blurRadius: 10,
+                                offset: const Offset(0, 6),
+                              ),
                             ],
                           ),
                           alignment: Alignment.center,
@@ -210,7 +220,7 @@ class LandingScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
+                              letterSpacing: 1.3,
                               color: Colors.black,
                             ),
                           ),
@@ -218,8 +228,9 @@ class LandingScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
 
+                    /// 🔷 TRUST TEXT
                     const Center(
                       child: Text(
                         "Trusted by 250+ Hospitals",
@@ -231,7 +242,7 @@ class LandingScreen extends StatelessWidget {
                     ),
 
                     const Spacer(),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -243,6 +254,7 @@ class LandingScreen extends StatelessWidget {
   }
 }
 
+/// 🔥 FEATURE CARD (UPGRADED)
 class _FeatureItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -257,10 +269,13 @@ class _FeatureItem extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.08),
+            ),
           ),
           child: Icon(
             icon,
@@ -268,7 +283,7 @@ class _FeatureItem extends StatelessWidget {
             size: 22,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           label,
           style: const TextStyle(

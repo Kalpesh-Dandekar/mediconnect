@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'patient_profile_screen.dart';
 import 'package:mediconnect/services/patient/patient_link_service.dart';
+
 class PatientDashboardScreen extends StatefulWidget {
   const PatientDashboardScreen({super.key});
 
@@ -40,25 +41,19 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
     _loadDashboard();
   }
 
-  /// 🔥 GENERATE CODE
   Future<void> _generateLinkCode() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-      final code =
-      await _linkService.generateAndSaveCode(user.uid);
+    final code = await _linkService.generateAndSaveCode(user.uid);
 
-      setState(() {
-        linkCode = code;
-      });
+    setState(() {
+      linkCode = code;
+    });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Link code generated")),
-      );
-    } catch (e) {
-      print(e);
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Link code generated")),
+    );
   }
 
   Future<void> _loadDashboard() async {
@@ -70,34 +65,13 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
 
     try {
 
-      String tempUserName = "Patient";
-      String tempLastVisitDate = "--";
-      String tempLastVisitDoctor = "";
-      String tempNextVisitDate = "--";
-      String tempNextVisitDept = "";
-      int tempTakenDoses = 0;
-      int tempTotalDoses = 0;
-      String tempReportName = "--";
-      String tempReportDate = "--";
-      String tempReportStatus = "--";
-      String tempLinkCode = "";
-
-      /// USER
       final userDoc = await FirebaseFirestore.instance
           .collection("users")
           .doc(uid)
           .get();
 
-      if (userDoc.exists) {
-        tempUserName = userDoc.data()?["name"] ?? "Patient";
-      }
+      final existingCode = await _linkService.getLinkCode(uid);
 
-      /// 🔥 GET LINK CODE
-      final existingCode =
-      await _linkService.getLinkCode(uid);
-      tempLinkCode = existingCode ?? "";
-
-      /// LAST VISIT
       final lastVisitSnap = await FirebaseFirestore.instance
           .collection("appointments")
           .where("patientId", isEqualTo: uid)
@@ -105,18 +79,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
           .limit(1)
           .get();
 
-      if (lastVisitSnap.docs.isNotEmpty) {
-        final data = lastVisitSnap.docs.first.data();
-
-        if (data["date"] != null) {
-          final dt = (data["date"] as Timestamp).toDate();
-          tempLastVisitDate = "${dt.day}/${dt.month}/${dt.year}";
-        }
-
-        tempLastVisitDoctor = data["doctorName"] ?? "";
-      }
-
-      /// NEXT VISIT
       final nextVisitSnap = await FirebaseFirestore.instance
           .collection("appointments")
           .where("patientId", isEqualTo: uid)
@@ -125,33 +87,11 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
           .limit(1)
           .get();
 
-      if (nextVisitSnap.docs.isNotEmpty) {
-        final data = nextVisitSnap.docs.first.data();
-
-        if (data["date"] != null) {
-          final dt = (data["date"] as Timestamp).toDate();
-          tempNextVisitDate = "${dt.day}/${dt.month}/${dt.year}";
-        }
-
-        tempNextVisitDept = data["department"] ?? "";
-      }
-
-      /// MEDICINES
       final meds = await FirebaseFirestore.instance
           .collection("medicines")
           .where("patientId", isEqualTo: uid)
           .get();
 
-      tempTotalDoses = meds.docs.length;
-
-      tempTakenDoses = meds.docs
-          .where((d) =>
-      (d.data()["status"] ?? "")
-          .toString()
-          .toLowerCase() == "taken")
-          .length;
-
-      /// REPORT
       final reports = await FirebaseFirestore.instance
           .collection("reports")
           .where("patientId", isEqualTo: uid)
@@ -159,46 +99,48 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
           .limit(1)
           .get();
 
-      if (reports.docs.isNotEmpty) {
-        final data = reports.docs.first.data();
+      setState(() {
 
-        tempReportName = data["testName"] ?? "--";
+        _userName = userDoc.data()?["name"] ?? "Patient";
+        linkCode = existingCode ?? "";
 
-        if (data["status"] == "available") {
-          tempReportDate = data["uploadedOn"] ?? "--";
-          tempReportStatus = data["resultStatus"] ?? "Available";
-        } else {
-          tempReportDate = data["expectedOn"] ?? "--";
-          tempReportStatus = "Pending";
+        if (lastVisitSnap.docs.isNotEmpty) {
+          final d = lastVisitSnap.docs.first.data();
+          final dt = (d["date"] as Timestamp?)?.toDate();
+          lastVisitDate =
+          dt != null ? "${dt.day}/${dt.month}/${dt.year}" : "--";
+          lastVisitDoctor = d["doctorName"] ?? "";
         }
-      }
 
-      if (mounted) {
-        setState(() {
-          _userName = tempUserName;
-          lastVisitDate = tempLastVisitDate;
-          lastVisitDoctor = tempLastVisitDoctor;
-          nextVisitDate = tempNextVisitDate;
-          nextVisitDept = tempNextVisitDept;
-          takenDoses = tempTakenDoses;
-          totalDoses = tempTotalDoses;
-          latestReportName = tempReportName;
-          latestReportDate = tempReportDate;
-          latestReportStatus = tempReportStatus;
-          linkCode = tempLinkCode;
-          _loading = false;
-        });
-      }
+        if (nextVisitSnap.docs.isNotEmpty) {
+          final d = nextVisitSnap.docs.first.data();
+          final dt = (d["date"] as Timestamp?)?.toDate();
+          nextVisitDate =
+          dt != null ? "${dt.day}/${dt.month}/${dt.year}" : "--";
+          nextVisitDept = d["department"] ?? "";
+        }
 
-    } catch (e) {
-      print("Dashboard error: $e");
-    }
+        totalDoses = meds.docs.length;
+        takenDoses = meds.docs.where((d) =>
+        (d.data()["status"] ?? "").toString().toLowerCase() == "taken").length;
+
+        if (reports.docs.isNotEmpty) {
+          final d = reports.docs.first.data();
+          latestReportName = d["testName"] ?? "--";
+          latestReportDate = d["uploadedOn"] ?? "--";
+          latestReportStatus = d["resultStatus"] ?? "--";
+        }
+
+        _loading = false;
+      });
+
+    } catch (e) {}
   }
 
   String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
+    final h = DateTime.now().hour;
+    if (h < 12) return "Good Morning";
+    if (h < 17) return "Good Afternoon";
     return "Good Evening";
   }
 
@@ -246,13 +188,13 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
                     ),
                   ),
 
+                  /// ✅ FIXED PROFILE NAVIGATION
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                          const PatientProfileScreen(),
+                          builder: (_) => const PatientProfileScreen(),
                         ),
                       );
                     },
@@ -274,30 +216,29 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
 
               const SizedBox(height: 24),
 
-              /// 🔥 CLEAN LINK CARD
+              /// LINK CARD
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1F3B5C), Color(0xFF14283C)],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withOpacity(0.05),
+                  border: Border.all(
+                      color: Colors.white.withOpacity(0.08)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    Row(
-                      children: const [
-                        Icon(Icons.link, color: Colors.tealAccent),
+                    const Row(
+                      children: [
+                        Icon(Icons.link,
+                            color: Color(0xFFFFB703)),
                         SizedBox(width: 8),
                         Text(
                           "Connect a Relative",
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
-                            fontSize: 14,
                           ),
                         ),
                       ],
@@ -307,28 +248,26 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
 
                     Text(
                       linkCode.isEmpty
-                          ? "Generate a secure code to connect your relative"
-                          : "Share this code with your relative:",
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 12,
+                          ? "Generate a secure code"
+                          : "Share this code:",
+                      style: const TextStyle(
+                        color: Colors.white60,
                       ),
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     if (linkCode.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 14),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           linkCode,
                           style: const TextStyle(
-                            color: Colors.tealAccent,
+                            color: Color(0xFFFFB703),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2,
@@ -338,22 +277,26 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
 
                     const SizedBox(height: 14),
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _generateLinkCode,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.tealAccent,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    GestureDetector(
+                      onTap: _generateLinkCode,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFFFF9F1C),
+                              Color(0xFFFFB703),
+                            ],
                           ),
                         ),
-                        child: Text(
-                          linkCode.isEmpty
-                              ? "Generate Code"
-                              : "Regenerate Code",
+                        alignment: Alignment.center,
+                        child: const Text(
+                          "Generate Code",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -363,51 +306,21 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
 
               const SizedBox(height: 20),
 
-              /// SUMMARY GRID
+              /// GRID
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 14,
-                childAspectRatio: 1.35,
+                childAspectRatio: 1.15,
                 children: [
-
-                  _SummaryCard(
-                    icon: Icons.local_hospital_outlined,
-                    title: "Last Visit",
-                    value: lastVisitDate,
-                    subtitle: lastVisitDoctor,
-                  ),
-
-                  _SummaryCard(
-                    icon: Icons.medication_outlined,
-                    title: "Medication",
-                    value: "$takenDoses / $totalDoses",
-                    subtitle: "$takenDoses taken",
-                  ),
-
-                  _SummaryCard(
-                    icon: Icons.event_available_outlined,
-                    title: "Next Visit",
-                    value: nextVisitDate,
-                    subtitle: nextVisitDept,
-                  ),
-
-                  _SummaryCard(
-                    icon: Icons.receipt_long_outlined,
-                    title: "Reports",
-                    value: latestReportStatus,
-                    subtitle: latestReportName,
-                  ),
+                  _SummaryCard(Icons.local_hospital_outlined, "Last Visit", lastVisitDate, lastVisitDoctor),
+                  _SummaryCard(Icons.medication_outlined, "Medication", "$takenDoses / $totalDoses", "$takenDoses taken"),
+                  _SummaryCard(Icons.event_available_outlined, "Next Visit", nextVisitDate, nextVisitDept),
+                  _SummaryCard(Icons.receipt_long_outlined, "Reports", latestReportStatus, latestReportName),
                 ],
               ),
-
-              const SizedBox(height: 28),
-
-              _sectionTitle("Latest Lab Report"),
-              const SizedBox(height: 12),
-              _reportCard(),
 
               const SizedBox(height: 40),
             ],
@@ -416,124 +329,58 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
       ),
     );
   }
-
-  Widget _sectionTitle(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 12,
-        letterSpacing: 1.1,
-        color: Colors.white.withOpacity(0.6),
-      ),
-    );
-  }
-
-  Widget _reportCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          Text(
-            latestReportName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          Text(
-            "Date: $latestReportDate",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            "Status: $latestReportStatus",
-            style: TextStyle(
-              color: latestReportStatus == "Normal"
-                  ? Colors.greenAccent
-                  : latestReportStatus == "Critical"
-                  ? Colors.redAccent
-                  : Colors.orangeAccent,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
+/// CARD
 class _SummaryCard extends StatelessWidget {
-
   final IconData icon;
   final String title;
   final String value;
   final String subtitle;
 
-  const _SummaryCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.subtitle,
-  });
+  const _SummaryCard(this.icon, this.title, this.value, this.subtitle);
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF14283C),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withOpacity(0.04),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          Icon(icon, size: 18, color: Colors.tealAccent),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.tealAccent.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 16, color: Colors.tealAccent),
+          ),
 
           const Spacer(),
 
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-
-          const SizedBox(height: 2),
-
-          Flexible(
-            child: Text(
-              title,
+          Text(value,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, color: Colors.white70),
-            ),
-          ),
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white)),
 
-          Flexible(
-            child: Text(
-              subtitle,
+          Text(title,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10, color: Colors.white54),
-            ),
-          ),
+              style: const TextStyle(fontSize: 11, color: Colors.white70)),
+
+          Text(subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10, color: Colors.white54)),
         ],
       ),
     );

@@ -14,14 +14,14 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
   final StaffProfileService _service = StaffProfileService();
 
-  static const Color _accent = Color(0xFF2979FF);
+  static const Color _accent = Color(0xFF00C2B2);
 
   void _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  /// 🔥 EDIT POPUP
+  /// 🔥 EDIT POPUP (UPDATED)
   void _editField({
     required String title,
     required String field,
@@ -34,23 +34,33 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF14283C),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: Text("Edit $title",
             style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: controller,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: "Enter value",
-            hintStyle: TextStyle(color: Colors.white38),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.05),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text("Cancel",
-                style: TextStyle(color: Colors.white70)),
+                style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _accent,
+            ),
             onPressed: () async {
               if (controller.text.trim().isEmpty) return;
 
@@ -64,7 +74,8 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
               Navigator.pop(context);
             },
-            child: const Text("Save"),
+            child: const Text("Save",
+                style: TextStyle(color: Colors.black)),
           ),
         ],
       ),
@@ -103,7 +114,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
             return SingleChildScrollView(
               padding:
-              const EdgeInsets.fromLTRB(20, 20, 20, 40),
+              const EdgeInsets.fromLTRB(20, 20, 20, 110),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -119,12 +130,15 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
                   const SizedBox(height: 20),
 
-                  /// 🔥 HEADER CARD
+                  /// 🔥 HEADER CARD (FIXED)
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF14283C),
                       borderRadius: BorderRadius.circular(18),
+                      color: Colors.white.withOpacity(0.05),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.08),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -152,54 +166,20 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                             crossAxisAlignment:
                             CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  GestureDetector(
-                                    onTap: () => _editField(
-                                      title: "Name",
-                                      field: "name",
-                                      currentValue: name,
-                                      isTopLevel: true,
-                                    ),
-                                    child: const Icon(Icons.edit,
-                                        size: 14,
-                                        color: Colors.white38),
-                                  ),
-                                ],
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-
                               const SizedBox(height: 4),
-
-                              Row(
-                                children: [
-                                  Text(
-                                    email,
-                                    style: const TextStyle(
-                                      color: Colors.white60,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  GestureDetector(
-                                    onTap: () => _editField(
-                                      title: "Email",
-                                      field: "email",
-                                      currentValue: email,
-                                      isTopLevel: true,
-                                    ),
-                                    child: const Icon(Icons.edit,
-                                        size: 14,
-                                        color: Colors.white38),
-                                  ),
-                                ],
+                              Text(
+                                email,
+                                style: const TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
@@ -212,7 +192,10 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
                   const Text(
                     "WORK INFORMATION",
-                    style: TextStyle(color: Colors.white54),
+                    style: TextStyle(
+                      color: Colors.white54,
+                      letterSpacing: 1.2,
+                    ),
                   ),
 
                   const SizedBox(height: 12),
@@ -233,10 +216,9 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                         decoration: BoxDecoration(
                           borderRadius:
                           BorderRadius.circular(30),
+                          border: Border.all(color: Colors.redAccent),
                           color:
-                          Colors.redAccent.withOpacity(0.15),
-                          border: Border.all(
-                              color: Colors.redAccent),
+                          Colors.redAccent.withOpacity(0.1),
                         ),
                         alignment: Alignment.center,
                         child: const Text(
@@ -258,7 +240,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
     );
   }
 
-  /// 🔥 TILE
+  /// 🔥 TILE (FIXED)
   Widget _tile(String title, String value, String field) {
     return GestureDetector(
       onTap: () => _editField(
@@ -269,10 +251,13 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(
-            horizontal: 14, vertical: 14),
+            horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF14283C),
           borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withOpacity(0.05),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.06),
+          ),
         ),
         child: Row(
           mainAxisAlignment:

@@ -56,6 +56,9 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF1E3148),
               borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.06),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.55),
@@ -63,9 +66,6 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
                   offset: const Offset(0, 15),
                 ),
               ],
-              border: Border.all(
-                color: Colors.white.withOpacity(0.06),
-              ),
             ),
             child: Row(
               children: List.generate(
@@ -82,7 +82,7 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
   }
 
   Widget _buildNavItem(_NavItem item, int index) {
-    final bool selected = index == _currentIndex;
+    final selected = index == _currentIndex;
 
     final Color activeColor =
     item.isEmergency ? const Color(0xFFE53935) : const Color(0xFFFFB703);
@@ -91,15 +91,12 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
     item.isEmergency ? Colors.redAccent.withOpacity(0.7) : Colors.white54;
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        alignment: Alignment.center,
-        child: Container(
+      behavior: HitTestBehavior.opaque, // ✅ better tap UX
+      onTap: () => setState(() => _currentIndex = index),
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut, // ✅ smoother animation
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: selected
@@ -110,20 +107,24 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+
+              /// ICON
               Icon(
                 selected ? item.activeIcon : item.icon,
                 size: 22,
                 color: selected ? activeColor : inactiveColor,
               ),
+
               const SizedBox(height: 4),
+
+              /// LABEL
               Text(
                 item.label,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: selected
-                      ? FontWeight.w600
-                      : FontWeight.w400,
+                  fontWeight:
+                  selected ? FontWeight.w600 : FontWeight.w400,
                   color: selected ? activeColor : inactiveColor,
                 ),
               ),

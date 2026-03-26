@@ -1,3 +1,5 @@
+// ONLY UI IMPROVED — backend untouched
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/patient/medicine_service.dart';
@@ -147,11 +149,15 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
 
               const SizedBox(height: 28),
 
+              /// 🔥 ADHERENCE CARD (UPGRADED)
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF14283C),
                   borderRadius: BorderRadius.circular(18),
+                  color: Colors.white.withOpacity(0.05),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.08),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,10 +166,17 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Adherence Today",
-                            style: TextStyle(color: Colors.white)),
-                        Text("${(_adherence * 100).toInt()}%",
-                            style: const TextStyle(color: Colors.tealAccent)),
+                        const Text(
+                          "Adherence Today",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        Text(
+                          "${(_adherence * 100).toInt()}%",
+                          style: const TextStyle(
+                            color: Colors.tealAccent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ],
                     ),
 
@@ -201,11 +214,17 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
     _groupedDoses.forEach((period, doses) {
 
       widgets.add(
-        Text(period.toUpperCase(),
-            style: const TextStyle(color: Colors.white54)),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(
+            period.toUpperCase(),
+            style: const TextStyle(
+              color: Colors.white54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       );
-
-      widgets.add(const SizedBox(height: 10));
 
       for (final Dose dose in doses) {
 
@@ -234,14 +253,22 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF14283C),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
+                color: Colors.white.withOpacity(0.05),
                 border: Border.all(color: dose.borderColor),
               ),
               child: Row(
                 children: [
 
-                  Icon(dose.icon, color: dose.iconColor),
+                  /// 🔥 ICON BOX
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: dose.iconColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(dose.icon, color: dose.iconColor),
+                  ),
 
                   const SizedBox(width: 14),
 
@@ -249,8 +276,14 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(dose.name,
-                            style: const TextStyle(color: Colors.white)),
+                        Text(
+                          dose.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
                         Text(
                           dose.time.isEmpty ? "--" : dose.time,
                           style: const TextStyle(color: Colors.white60),
@@ -272,9 +305,8 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
   }
 }
 
-/// MODEL
+/// MODEL (UNCHANGED)
 class Dose {
-
   final String id;
   final String name;
   final String time;
@@ -358,14 +390,18 @@ class _StatusChip extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: bg.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         text,
-        style: TextStyle(color: bg, fontSize: 11),
+        style: TextStyle(
+          color: bg,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

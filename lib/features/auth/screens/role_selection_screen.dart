@@ -60,6 +60,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
                 const SizedBox(height: 20),
 
+                /// 🔙 BACK BUTTON
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(
@@ -69,31 +70,34 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
+                /// 🔷 LABEL
                 const Text(
                   "SELECT ROLE",
                   style: TextStyle(
                     fontSize: 13,
-                    letterSpacing: 2,
+                    letterSpacing: 2.5,
                     color: Colors.white54,
                   ),
                 ),
 
                 const SizedBox(height: 12),
 
+                /// 🔥 TITLE
                 const Text(
                   "How will you use\nMediConnect?",
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 34,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                     height: 1.2,
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
+                /// 🔷 SUBTITLE
                 const Text(
                   "Choose your role to personalize your experience.",
                   style: TextStyle(
@@ -103,14 +107,15 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 36),
 
+                /// 🔥 ROLE GRID
                 Expanded(
                   child: GridView.count(
                     crossAxisCount: 2,
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 1.1,
+                    mainAxisSpacing: 18,
+                    crossAxisSpacing: 18,
+                    childAspectRatio: 1.05,
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
                       _RoleCard(
@@ -141,8 +146,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
+                /// 🚀 CTA BUTTON
                 Center(
                   child: GestureDetector(
                     onTap: _continue,
@@ -151,7 +157,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       width: 260,
                       height: 56,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius: BorderRadius.circular(30),
                         gradient: selectedRole != null
                             ? const LinearGradient(
                           colors: [
@@ -163,6 +169,16 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         color: selectedRole == null
                             ? Colors.white.withOpacity(0.08)
                             : null,
+                        boxShadow: selectedRole != null
+                            ? [
+                          BoxShadow(
+                            color: const Color(0xFFFF9F1C)
+                                .withOpacity(0.35),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ]
+                            : [],
                       ),
                       alignment: Alignment.center,
                       child: Text(
@@ -172,14 +188,14 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                               ? Colors.black
                               : Colors.white54,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 28),
               ],
             ),
           ),
@@ -189,6 +205,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   }
 }
 
+/// 🔥 PREMIUM ROLE CARD
 class _RoleCard extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -208,9 +225,10 @@ class _RoleCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Colors.white.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(22),
+          color: Colors.white.withOpacity(0.05),
           border: Border.all(
             color: selected
                 ? const Color(0xFFFF9F1C)
@@ -221,8 +239,8 @@ class _RoleCard extends StatelessWidget {
               ? [
             BoxShadow(
               color: const Color(0xFFFF9F1C).withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             )
           ]
               : [],
@@ -230,14 +248,28 @@ class _RoleCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 32,
-              color: selected
-                  ? const Color(0xFFFF9F1C)
-                  : Colors.white70,
+
+            /// 🔶 ICON CONTAINER
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: selected
+                    ? const Color(0xFFFF9F1C).withOpacity(0.15)
+                    : Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                icon,
+                size: 28,
+                color: selected
+                    ? const Color(0xFFFF9F1C)
+                    : Colors.white70,
+              ),
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 14),
+
+            /// 🔶 TITLE
             Text(
               title,
               style: TextStyle(

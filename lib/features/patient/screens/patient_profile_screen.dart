@@ -19,7 +19,6 @@ class _PatientProfileScreenState
   final PatientProfileService _service = PatientProfileService();
 
   void _logout(BuildContext context) async {
-
     await FirebaseAuth.instance.signOut();
 
     Navigator.pushAndRemoveUntil(
@@ -29,7 +28,7 @@ class _PatientProfileScreenState
     );
   }
 
-  /// 🔥 EDIT FIELD
+  /// 🔥 EDIT FIELD (FIXED DARK UI)
   void _editField(String title, String field, String currentValue) {
 
     final controller = TextEditingController(text: currentValue);
@@ -37,19 +36,42 @@ class _PatientProfileScreenState
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text("Edit $title"),
-        content: TextField(controller: controller),
+        backgroundColor: const Color(0xFF14283C),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          "Edit $title",
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.05),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: const Text("Cancel",
+                style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _accent,
+            ),
             onPressed: () async {
               await _service.updateField(field, controller.text.trim());
               Navigator.pop(context);
             },
-            child: const Text("Save"),
+            child: const Text("Save",
+                style: TextStyle(color: Colors.black)),
           ),
         ],
       ),
@@ -87,10 +109,11 @@ class _PatientProfileScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
+                  /// HEADER
                   const Text(
                     "Profile",
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 26,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
@@ -98,12 +121,15 @@ class _PatientProfileScreenState
 
                   const SizedBox(height: 20),
 
-                  /// HEADER CARD
+                  /// 🔥 PROFILE CARD
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(18),
+                      color: Colors.white.withOpacity(0.05),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.08),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -135,6 +161,7 @@ class _PatientProfileScreenState
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+                              const SizedBox(height: 4),
                               Text(
                                 "Patient ID: ${user?.uid.substring(0,6)}",
                                 style: const TextStyle(
@@ -153,10 +180,13 @@ class _PatientProfileScreenState
 
                   const Text(
                     "PERSONAL INFORMATION",
-                    style: TextStyle(color: Colors.white54),
+                    style: TextStyle(
+                      color: Colors.white54,
+                      letterSpacing: 1.2,
+                    ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
                   _editableTile("Full Name", name, "name"),
                   _editableTile("Age", age, "age"),
@@ -166,7 +196,7 @@ class _PatientProfileScreenState
 
                   const SizedBox(height: 40),
 
-                  /// LOGOUT
+                  /// 🔥 LOGOUT
                   Center(
                     child: GestureDetector(
                       onTap: () => _logout(context),
@@ -175,8 +205,8 @@ class _PatientProfileScreenState
                         height: 50,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
-                          color: Colors.redAccent.withOpacity(0.15),
                           border: Border.all(color: Colors.redAccent),
+                          color: Colors.redAccent.withOpacity(0.1),
                         ),
                         alignment: Alignment.center,
                         child: const Text(
@@ -198,7 +228,7 @@ class _PatientProfileScreenState
     );
   }
 
-  /// 🔥 EDITABLE TILE
+  /// 🔥 TILE UPGRADED
   Widget _editableTile(String title, String value, String field) {
 
     return GestureDetector(
@@ -207,10 +237,13 @@ class _PatientProfileScreenState
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(
-            horizontal: 14, vertical: 14),
+            horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withOpacity(0.05),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.06),
+          ),
         ),
         child: Row(
           mainAxisAlignment:
@@ -222,7 +255,7 @@ class _PatientProfileScreenState
               children: [
                 Text(value,
                     style: const TextStyle(color: Colors.white)),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 const Icon(Icons.edit,
                     size: 16, color: Colors.white38),
               ],

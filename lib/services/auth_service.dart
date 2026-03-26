@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -31,7 +32,7 @@ class AuthService {
           'role': role,
           'createdAt': FieldValue.serverTimestamp(),
           'profile': {},
-          'profileCompleted': false, // 🔥 important
+          'profileCompleted': false,
         });
       }
 
@@ -60,6 +61,47 @@ class AuthService {
       rethrow;
     } catch (e) {
       throw Exception("Unexpected error during login");
+    }
+  }
+
+  /// 🔥 GOOGLE SIGN-IN (NEW)
+  Future<User?> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser =
+      await GoogleSignIn().signIn();
+
+      if (googleUser == null) return null;
+
+      final googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential =
+      await _auth.signInWithCredential(credential);
+
+      return userCredential.user;
+
+    } catch (e) {
+      throw Exception("Google sign-in failed");
+    }
+  }
+
+  /// 🔥 CREATE USER IF NOT EXISTS (NEW)
+  Future<void> createUserIfNotExists(User user) async {
+    final doc =
+    await _firestore.collection("users").doc(user.uid).get();
+
+    if (!doc.exists) {
+      await _firestore.collection("users").doc(user.uid).set({
+        "name": user.displayName ?? "User",
+        "email": user.email,
+        "role": null,
+        "profileCompleted": false,
+        "createdAt": FieldValue.serverTimestamp(),
+      });
     }
   }
 
@@ -108,8 +150,9 @@ class AuthService {
     return doc.data()?['profileCompleted'] ?? false;
   }
 
-  /// 🔹 Logout
+  /// 🔹 Logout (UPDATED)
   Future<void> logout() async {
+    await GoogleSignIn().signOut(); // 🔥 important
     await _auth.signOut();
   }
 }

@@ -11,16 +11,33 @@ class RelativeNotificationsScreen extends StatelessWidget {
 
     if (user == null) {
       return const Scaffold(
-        body: Center(child: Text("User not logged in")),
+        backgroundColor: Color(0xFF0C1B2A),
+        body: Center(
+          child: Text(
+            "User not logged in",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
       );
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFF0C1B2A),
+
+      /// 🔥 APPBAR FIXED
       appBar: AppBar(
-        title: const Text("Alerts"),
+        elevation: 0,
         backgroundColor: const Color(0xFF0C1B2A),
+        title: const Text(
+          "Alerts",
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
+
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection("notifications")
@@ -45,48 +62,74 @@ class RelativeNotificationsScreen extends StatelessWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
             itemCount: docs.length,
             itemBuilder: (context, index) {
 
               final data = docs[index].data() as Map<String, dynamic>;
 
+              final message = data["message"] ?? "";
+              final timestamp = data["timestamp"];
+
+              String timeText = "";
+              if (timestamp != null) {
+                final dt = (timestamp as Timestamp).toDate();
+                timeText =
+                "${dt.day}/${dt.month}/${dt.year} • ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}";
+              }
+
               return Container(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 14),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF14283C),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
+                  color: Colors.white.withOpacity(0.05),
                   border: Border.all(
-                      color: Colors.redAccent.withOpacity(0.4)),
+                    color: Colors.redAccent.withOpacity(0.4),
+                  ),
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    const Icon(Icons.warning, color: Colors.redAccent),
+                    /// ICON
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.warning,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                    ),
 
                     const SizedBox(width: 12),
 
+                    /// TEXT
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
 
                           Text(
-                            data["message"] ?? "",
-                            style: const TextStyle(color: Colors.white),
+                            message,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
 
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
 
                           Text(
-                            data["timestamp"] != null
-                                ? (data["timestamp"] as Timestamp)
-                                .toDate()
-                                .toString()
-                                : "",
+                            timeText,
                             style: const TextStyle(
-                                color: Colors.white54, fontSize: 12),
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),

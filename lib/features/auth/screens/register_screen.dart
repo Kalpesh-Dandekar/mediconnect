@@ -119,17 +119,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 28, vertical: 30),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight),
+                  constraints:
+                  BoxConstraints(minHeight: constraints.maxHeight),
                   child: IntrinsicHeight(
                     child: Column(
                       crossAxisAlignment:
                       CrossAxisAlignment.start,
                       children: [
 
+                        /// 🔙 BACK
                         IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(
@@ -140,28 +141,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         const SizedBox(height: 10),
 
+                        /// 🔷 LABEL
                         const Text(
                           "REGISTER",
                           style: TextStyle(
                             fontSize: 13,
-                            letterSpacing: 2,
+                            letterSpacing: 2.5,
                             color: Colors.white54,
                           ),
                         ),
 
                         const SizedBox(height: 12),
 
+                        /// 🔥 TITLE
                         const Text(
                           "Create Account",
                           style: TextStyle(
-                            fontSize: 32,
+                            fontSize: 34,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
                         ),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
 
+                        /// 🔷 ROLE TEXT
                         Text(
                           "Register as ${widget.role}",
                           style: const TextStyle(
@@ -178,7 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Icons.person_outline,
                             false),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 18),
 
                         _buildInputField(
                             emailController,
@@ -186,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Icons.email_outlined,
                             false),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 18),
 
                         _buildInputField(
                             passwordController,
@@ -194,7 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Icons.lock_outline,
                             true),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 18),
 
                         _buildInputField(
                             confirmController,
@@ -202,8 +206,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Icons.lock_outline,
                             true),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 36),
 
+                        /// 🚀 BUTTON
                         Center(
                           child: GestureDetector(
                             onTap:
@@ -213,7 +218,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               height: 58,
                               decoration: BoxDecoration(
                                 borderRadius:
-                                BorderRadius.circular(28),
+                                BorderRadius.circular(30),
                                 gradient:
                                 const LinearGradient(
                                   colors: [
@@ -221,6 +226,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     Color(0xFFFFB703)
                                   ],
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFF9F1C)
+                                        .withOpacity(0.35),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
                               ),
                               alignment: Alignment.center,
                               child: isLoading
@@ -242,8 +255,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 26),
 
+                        /// 🔷 LOGIN TEXT
                         Center(
                           child: Row(
                             mainAxisAlignment:
@@ -270,7 +284,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   style: TextStyle(
                                     color: Color(0xFFFFB703),
                                     fontWeight:
-                                    FontWeight.bold,
+                                    FontWeight.w600,
                                   ),
                                 ),
                               ),
@@ -278,8 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
 
-                        const Spacer(), // 🔥 pushes content properly
-
+                        const Spacer(),
                         const SizedBox(height: 20),
                       ],
                     ),
@@ -293,6 +306,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  /// 🔥 PREMIUM INPUT FIELD
   Widget _buildInputField(
       TextEditingController controller,
       String hint,
@@ -310,12 +324,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
         hintStyle:
         const TextStyle(color: Colors.white38),
         filled: true,
-        fillColor:
-        Colors.white.withOpacity(0.06),
+        fillColor: Colors.white.withOpacity(0.06),
+        contentPadding:
+        const EdgeInsets.symmetric(vertical: 18),
         border: OutlineInputBorder(
-          borderRadius:
-          BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(
+            color: Colors.white.withOpacity(0.08),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(
+            color: Color(0xFFFF9F1C),
+            width: 1.2,
+          ),
         ),
       ),
     );

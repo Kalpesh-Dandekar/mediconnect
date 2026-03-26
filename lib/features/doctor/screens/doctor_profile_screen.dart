@@ -45,20 +45,68 @@ class DoctorProfileScreen extends StatelessWidget {
                   const Text(
                     "Profile",
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 20),
 
-                  /// HEADER
-                  _profileHeader(data),
+                  /// 🔥 HEADER (FIXED)
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: Colors.white.withOpacity(0.05),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.08),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: accent.withOpacity(0.2),
+                          child: Text(
+                            (data["name"] ?? "D")[0],
+                            style: const TextStyle(
+                              color: accent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              data["name"] ?? "Doctor",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              data["specialization"] ?? "",
+                              style: const TextStyle(
+                                color: Colors.white54,
+                              ),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
 
                   const SizedBox(height: 28),
 
-                  /// PROFESSIONAL INFO
+                  /// PROFESSIONAL
                   _sectionTitle("Professional Information"),
 
                   _editableTile(context, "Name", data["name"], "name"),
@@ -66,7 +114,7 @@ class DoctorProfileScreen extends StatelessWidget {
                   _infoTile("Email", data["email"] ?? ""),
                   _infoTile("Department", data["department"] ?? "General"),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 28),
 
                   /// AVAILABILITY
                   _sectionTitle("Availability"),
@@ -75,16 +123,30 @@ class DoctorProfileScreen extends StatelessWidget {
                   _editableTile(context, "Time", data["time"], "time"),
                   _editableTile(context, "Fee", data["fee"], "fee"),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 40),
 
-                  /// ACCOUNT
-                  _sectionTitle("Account"),
-
-                  _actionTile(
-                    icon: Icons.logout,
-                    title: "Logout",
-                    isDanger: true,
-                    onTap: () => _logout(context),
+                  /// 🔥 LOGOUT (FIXED)
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => _logout(context),
+                      child: Container(
+                        width: 220,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.redAccent),
+                          color: Colors.redAccent.withOpacity(0.1),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          "Logout",
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -95,84 +157,55 @@ class DoctorProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 🔥 HEADER
-  Widget _profileHeader(Map<String, dynamic> data) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 30,
-            backgroundColor: accent,
-            child: Text("DR", style: TextStyle(color: Colors.black)),
-          ),
-          const SizedBox(width: 15),
-
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                data["name"] ?? "Doctor",
-                style: const TextStyle(color: Colors.white),
-              ),
-              Text(
-                data["specialization"] ?? "",
-                style: const TextStyle(color: Colors.white54),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  /// 🔥 EDITABLE TILE
+  /// 🔥 EDITABLE TILE (FIXED)
   Widget _editableTile(BuildContext context, String label, dynamic value, String field) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.white60)),
+    return GestureDetector(
+      onTap: () => _showEditDialog(context, label, value, field),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withOpacity(0.05),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.06),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(color: Colors.white60)),
 
-          Row(
-            children: [
-              Text(
-                (value == null || value.toString().isEmpty)
-                    ? "-"
-                    : value.toString(),
-                style: const TextStyle(color: Colors.white),
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit, color: accent, size: 18),
-                onPressed: () {
-                  _showEditDialog(context, label, value, field);
-                },
-              ),
-            ],
-          )
-        ],
+            Row(
+              children: [
+                Text(
+                  (value == null || value.toString().isEmpty)
+                      ? "-"
+                      : value.toString(),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.edit,
+                    size: 16, color: Colors.white38),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// 🔒 NON EDITABLE
+  /// 🔒 INFO TILE
   Widget _infoTile(String label, String value) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.06),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -184,7 +217,7 @@ class DoctorProfileScreen extends StatelessWidget {
     );
   }
 
-  /// ✏️ EDIT DIALOG
+  /// EDIT DIALOG
   void _showEditDialog(BuildContext context, String label, dynamic value, String field) {
 
     final controller = TextEditingController(text: value?.toString() ?? "");
@@ -193,32 +226,39 @@ class DoctorProfileScreen extends StatelessWidget {
       context: context,
       builder: (_) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF16263A),
+          backgroundColor: const Color(0xFF14283C),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text("Edit $label", style: const TextStyle(color: Colors.white)),
           content: TextField(
             controller: controller,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              hintText: "Enter value",
-              hintStyle: TextStyle(color: Colors.white38),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: const Text("Cancel",
+                  style: TextStyle(color: Colors.white54)),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: accent,
+              ),
               onPressed: () async {
-                final newValue = controller.text.trim();
-
-                if (newValue.isEmpty) return;
-
-                await service.updateField(field, newValue);
-
+                await service.updateField(field, controller.text.trim());
                 Navigator.pop(context);
               },
-              child: const Text("Save", style: TextStyle(color: accent)),
+              child: const Text("Save",
+                  style: TextStyle(color: Colors.black)),
             ),
           ],
         );
@@ -226,7 +266,6 @@ class DoctorProfileScreen extends StatelessWidget {
     );
   }
 
-  /// LOGOUT
   void _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
 
@@ -240,35 +279,13 @@ class DoctorProfileScreen extends StatelessWidget {
   }
 
   static Widget _sectionTitle(String title) {
-    return Text(
-      title.toUpperCase(),
-      style: const TextStyle(color: Colors.white54),
-    );
-  }
-
-  static Widget _actionTile({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isDanger = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Icon(icon,
-                color: isDanger ? Colors.redAccent : accent),
-            const SizedBox(width: 12),
-            Text(title,
-                style: TextStyle(
-                    color: isDanger ? Colors.redAccent : Colors.white)),
-          ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.white54,
+          letterSpacing: 1.2,
         ),
       ),
     );
