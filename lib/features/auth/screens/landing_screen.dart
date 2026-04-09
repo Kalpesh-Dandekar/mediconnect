@@ -50,7 +50,7 @@ class LandingScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFFFF9F1C).withOpacity(0.18),
+                        Color(0xFFFF9F1C).withOpacity(0.18),
                         Colors.transparent,
                       ],
                     ),
@@ -203,7 +203,7 @@ class LandingScreen extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFF9F1C).withOpacity(0.4),
+                                color: Color(0xFFFF9F1C).withOpacity(0.4),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -254,7 +254,7 @@ class LandingScreen extends StatelessWidget {
   }
 }
 
-/// 🔥 FEATURE CARD (UPGRADED)
+/// 🔥 FEATURE CARD
 class _FeatureItem extends StatelessWidget {
   final IconData icon;
   final String label;
